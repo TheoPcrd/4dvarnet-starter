@@ -15,13 +15,9 @@ rec_dir
 !ose_data_pipeline.ipynb
 reproduce/*.ckpt
 *.png
-TRAINING-TEST/launch_main.sh
-TRAINING-TEST/launch_main_4d.sh
-TRAINING-TEST/launch_rec.sh
-TRAINING-TEST/launch_rec_concat.sh
-TRAINING-TEST/log/
-TRAINING-TEST/rec/
-TRAINING-TEST/data/
+log/
+rec/
+data/
 
 2023a_SSH_mapping_OSE/data
 2023a_SSH_mapping_OSE/figures  
