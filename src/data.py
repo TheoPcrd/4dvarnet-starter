@@ -4,22 +4,25 @@ import torch.utils.data
 import xarray as xr
 import itertools
 import functools as ft
-import tqdm
 from collections import namedtuple
+from tqdm import tqdm
 
 TrainingItem = namedtuple('TrainingItem', ['input', 'tgt'])
+
 
 class IncompleteScanConfiguration(Exception):
     pass
 
+
 class DangerousDimOrdering(Exception):
     pass
+
 
 class XrDataset(torch.utils.data.Dataset):
     """
     torch Dataset based on an xarray.DataArray with on the fly slicing.
 
-    ### Usage: #### 
+    ### Usage: ####
     If you want to be able to reconstruct the input
 
     the input xr.DataArray should:
@@ -30,14 +33,16 @@ class XrDataset(torch.utils.data.Dataset):
     the batches passed to self.reconstruct should:
         - have the last dims correspond to the patch dims in same order
     """
+
     def __init__(
             self, da, patch_dims, domain_limits=None, strides=None,
             check_full_scan=False, check_dim_order=False,
-            postpro_fn=None
-            ):
+            postpro_fn=None,
+            verbose=False
+        ):
         """
         da: xarray.DataArray with patch dims at the end in the dim orders
-        patch_dims: dict of da dimension to size of a patch 
+        patch_dims: dict of da dimension to size of a patch
         domain_limits: dict of da dimension to slices of domain to select for patch extractions
         strides: dict of dims to stride size (default to one)
         check_full_scan: Boolean: if True raise an error if the whole domain is not scanned by the patch size stride combination
@@ -49,14 +54,27 @@ class XrDataset(torch.utils.data.Dataset):
         self.patch_dims = patch_dims
         self.strides = strides or {}
         da_dims = dict(zip(self.da.dims, self.da.shape))
+        self.da_dims = da_dims
+
+        self.define_ds_size(da_dims, patch_dims, self.strides)
+        self.check_full_scan(check_full_scan, da_dims)
+        self.check_dim_order(check_dim_order)
+        
+        if verbose:
+            print('dataset sizes: {}'.format(dict(self.da.sizes)))
+            print('patches per dim: {}'.format(self.ds_size))
+            print('dataset length: {}'.format(len(self)))
+            print('-'*60)
+
+    def define_ds_size(self, da_dims, patch_dims, strides):
         self.ds_size = {
-            dim: max((da_dims[dim] - patch_dims[dim]) // self.strides.get(dim, 1) + 1, 0)
+            dim: max((da_dims[dim] - patch_dims[dim]) // strides.get(dim, 1) + 1, 0)
             for dim in patch_dims
         }
 
-
-        if check_full_scan:
-            for dim in patch_dims:
+    def check_full_scan(self, check, da_dims):
+        if check:
+            for dim in self.patch_dims:
                 if (da_dims[dim] - self.patch_dims[dim]) % self.strides.get(dim, 1) != 0:
                     raise IncompleteScanConfiguration(
                         f"""
@@ -67,17 +85,19 @@ class XrDataset(torch.utils.data.Dataset):
                         [shape - patch_size] should be divisible by stride
                         """
                     )
+            
+    def check_dim_order(self, check):
+        if check:
+            for dim in self.patch_dims:
+                    if not '#'.join(self.da.dims).endswith('#'.join(list(self.patch_dims))):
+                        raise DangerousDimOrdering(
+                            f"""
+                            input dataarray's dims should end with patch_dims
+                            dataarray's dim {self.da.dims}:
+                            patch_dims {list(self.patch_dims)}
+                            """
+                        )
 
-        if check_dim_order:
-            for dim in patch_dims:
-                if not '#'.join(da.dims).endswith('#'.join(list(patch_dims))): 
-                    raise DangerousDimOrdering(
-                        f"""
-                        input dataarray's dims should end with patch_dims 
-                        dataarray's dim {da.dims}:
-                        patch_dims {list(patch_dims)}
-                        """
-                )
     def __len__(self):
         size = 1
         for v in self.ds_size.values():
@@ -100,19 +120,20 @@ class XrDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, item):
         sl = {
-                dim: slice(self.strides.get(dim, 1) * idx,
-                           self.strides.get(dim, 1) * idx + self.patch_dims[dim])
-                for dim, idx in zip(self.ds_size.keys(),
-                                    np.unravel_index(item, tuple(self.ds_size.values())))
-                }
-        item =  self.da.isel(**sl)
+            dim: slice(self.strides.get(dim, 1) * idx,
+                       self.strides.get(dim, 1) * idx + self.patch_dims[dim])
+            for dim, idx in zip(self.ds_size.keys(),
+                                np.unravel_index(item, tuple(self.ds_size.values())))
+        }
+        item = self.da.isel(**sl)
 
         if self.return_coords:
             return item.coords.to_dataset()[list(self.patch_dims)]
 
         item = item.data.astype(np.float32)
         if self.postpro_fn is not None:
-            return self.postpro_fn(item)
+            item = self.postpro_fn(item)
+
         return item
 
     def reconstruct(self, batches, weight=None):
@@ -120,9 +141,9 @@ class XrDataset(torch.utils.data.Dataset):
         takes as input a list of np.ndarray of dimensions (b, *, *patch_dims)
         return a stitched xarray.DataArray with the coords of patch_dims
 
-    batches: list of torch tensor correspondin to batches without shuffle
+        batches: list of torch tensor correspondin to batches without shuffle
         weight: tensor of size patch_dims corresponding to the weight of a prediction depending on the position on the patch (default to ones everywhere)
-        overlapping patches will be averaged with weighting 
+        overlapping patches will be averaged with weighting
         """
 
         items = list(itertools.chain(*batches))
@@ -139,15 +160,15 @@ class XrDataset(torch.utils.data.Dataset):
         dims = new_dims + list(coords[0].dims)
 
         das = [xr.DataArray(it.numpy(), dims=dims, coords=co.coords)
-               for  it, co in zip(items, coords)]
+               for it, co in zip(items, coords)]
 
         da_shape = dict(zip(coords[0].dims, self.da.shape[-len(coords[0].dims):]))
         new_shape = dict(zip(new_dims, items[0].shape[:len(new_dims)]))
 
         rec_da = xr.DataArray(
-                np.zeros([*new_shape.values(), *da_shape.values()]),
-                dims=dims,
-                coords={d: self.da[d] for d in self.patch_dims} 
+            np.zeros([*new_shape.values(), *da_shape.values()]),
+            dims=dims,
+            coords={d: self.da[d] for d in self.patch_dims}
         )
         count_da = xr.zeros_like(rec_da)
 
@@ -157,10 +178,12 @@ class XrDataset(torch.utils.data.Dataset):
 
         return rec_da / count_da
 
+
 class XrConcatDataset(torch.utils.data.ConcatDataset):
     """
     Concatenation of XrDatasets
     """
+
     def reconstruct(self, batches, weight=None):
         """
         Returns list of xarray object, reconstructed from batches
@@ -170,8 +193,9 @@ class XrConcatDataset(torch.utils.data.ConcatDataset):
         for ds in self.datasets:
             ds_items = list(itertools.islice(items_iter, len(ds)))
             rec_das.append(ds.reconstruct_from_items(ds_items, weight))
-    
+
         return rec_das
+
 
 class AugmentedDataset(torch.utils.data.Dataset):
     def __init__(self, inp_ds, aug_factor, aug_only=False, noise_sigma=None):
@@ -195,7 +219,7 @@ class AugmentedDataset(torch.utils.data.Dataset):
         perm_idx = tgt_idx
         for _ in range(idx // len(self.inp_ds)):
             perm_idx = self.perm[perm_idx]
-        
+
         item = self.inp_ds[tgt_idx]
         perm_item = self.inp_ds[perm_idx]
 
@@ -204,7 +228,8 @@ class AugmentedDataset(torch.utils.data.Dataset):
             noise = np.random.randn(*item.input.shape).astype(np.float32) * self.noise_sigma
 
         return item._replace(input=noise + np.where(np.isfinite(perm_item.input),
-                             item.tgt, np.full_like(item.tgt,np.nan)))
+                             item.tgt, np.full_like(item.tgt, np.nan)))
+
 
 class BaseDataModule(pl.LightningDataModule):
     def __init__(self, input_da, domains, xrds_kw, dl_kw, aug_kw=None, norm_stats=None, **kwargs):
@@ -233,13 +258,13 @@ class BaseDataModule(pl.LightningDataModule):
 
     def post_fn(self):
         m, s = self.norm_stats()
-        normalize = lambda item: (item - m) / s
-        return ft.partial(ft.reduce,lambda i, f: f(i), [
+        def normalize(item): return (item - m) / s
+        
+        return ft.partial(ft.reduce, lambda i, f: f(i), [
             TrainingItem._make,
             lambda item: item._replace(tgt=normalize(item.tgt)),
             lambda item: item._replace(input=normalize(item.input)),
         ])
-
 
     def setup(self, stage='test'):
         train_data = self.input_da.sel(self.domains['train'])
@@ -257,15 +282,15 @@ class BaseDataModule(pl.LightningDataModule):
             self.input_da.sel(self.domains['test']), **self.xrds_kw, postpro_fn=post_fn,
         )
 
-
     def train_dataloader(self):
-        return  torch.utils.data.DataLoader(self.train_ds, shuffle=True, **self.dl_kw)
+        return torch.utils.data.DataLoader(self.train_ds, shuffle=True, **self.dl_kw)
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(self.val_ds, shuffle=False, **self.dl_kw)
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(self.test_ds, shuffle=False, **self.dl_kw)
+
 
 class ConcatDataModule(BaseDataModule):
     def train_mean_std(self):
@@ -319,4 +344,3 @@ class RandValDataModule(BaseDataModule):
             self.train_ds = AugmentedDataset(self.train_ds, **self.aug_kw)
 
         self.test_ds = XrDataset(self.input_da.sel(self.domains['test']), **self.xrds_kw, postpro_fn=post_fn,)
-

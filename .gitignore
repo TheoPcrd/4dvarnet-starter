@@ -9,3 +9,16 @@ tmp
 data
 jobs
 **/*egg-info
+results
+rec_dir
+!reproduce_glorys_ose_results.ipynb
+!ose_data_pipeline.ipynb
+reproduce/*.ckpt
+*.png
+launch_main.sh
+launch_main_4d.sh
+launch_rec.sh
+launch_rec_concat.sh
+log/
+rec/
+data/

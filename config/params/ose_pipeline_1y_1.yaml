@@ -1,0 +1,27 @@
+# @package _global_
+
+data_name: 2019_global_4
+
+specs:
+  pixels_per_degree: 4
+
+  # time on which model will be tested
+  min_time: 2019-01-01
+  max_time: 2019-07-31
+
+  # time on which the model will compute the normalisation stats (mean,std)
+  min_time_std: 2019-01-01
+  max_time_std: 2019-12-31
+
+  time_day_crop: 0
+
+  min_lon: -180
+  max_lon: 180
+  min_lat: -80
+  max_lat: 90
+
+  #IMPORTANT: keep "{}" in place of satellite name in copernicus_dataset_id
+  copernicus_dataset_id: cmems_obs-sl_glo_phy-ssh_nrt_{}-l3-duacs_PT1S
+
+  input_satellites: ['al', 'c2n', 'h2b', 'j3n', 's3a', 's3b']
+  ref_satellites: ['s6a-hr']

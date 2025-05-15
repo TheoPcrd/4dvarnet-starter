@@ -18,7 +18,6 @@ dependencies:
   - scipy
   - matplotlib
   - holoviews
-  - mkl=2024.0
   - pip:
     - GitPython
     - einops
