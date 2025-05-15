@@ -1,0 +1,18 @@
+
+# conda environments:
+#
+base                   /Odyssey/private/t22picar/miniforge3
+4dvarnet-daniel      * /Odyssey/private/t22picar/miniforge3/envs/4dvarnet-daniel
+4dvarnet-starter       /Odyssey/private/t22picar/miniforge3/envs/4dvarnet-starter
+env-dc-global-ose1     /Odyssey/private/t22picar/miniforge3/envs/env-dc-global-ose1
+
+2010
+Ignoring index file '/Odyssey/private/t22picar/data/era5/era5_2010.grib.5b7b6.idx' older than GRIB file
+year = 2010
+new sizes: [680, 1440]
+computing daily mean ...
+done computing daily mean
+interpolation 4th
+Done interpolation 4th
+Saving file ...
+Saving done
