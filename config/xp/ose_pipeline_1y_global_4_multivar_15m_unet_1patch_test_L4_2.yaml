@@ -1,17 +1,16 @@
 # @package _global_
 
-xp_name: multivar_mapping_ssh_neurost_sst_wind_to_u_v_test_L4_1y # name of your experience (will create folders using this name)
-#data_name: 2019_global_4
-data_name: 2019_global_4_2
+xp_name: multivar_mapping_ssh_sst_w_to_u_v_L4_10y # name of your experience (will create folders using this name)
+data_name: 2019_global_4
+#data_name: 2019_global_4_2
 
 paths:
-  ose_data_path: /Odyssey/private/t22picar/4dvarnet-uv/rec
-  rec_path: /Odyssey/private/t22picar/4dvarnet-uv/rec/ # your reconstruction will be stored in <rec_path>/<xp_name>/<data_name>/
-  metrics_path: /Odyssey/private/t22picar/4dvarnet-uv/metrics/
+  ose_data_path: /Odyssey/private/t22picar/multivar_uv/rec
+  rec_path: /Odyssey/private/t22picar/multivar_uv/rec/ # your reconstruction will be stored in <rec_path>/<xp_name>/<data_name>/
+  metrics_path: /Odyssey/private/t22picar/multivar_uv/metrics/
 
-  model_config_path: /Odyssey/private/t22picar/4dvarnet-uv/config/xp/base_rec_global_multivar_uv_glorys_15m_1y_unet_1patch_wind_L4_ssh_neurost.yaml
-  model_ckpt_path: /Odyssey/private/t22picar/4dvarnet-uv/outputs/saved/17-55-19/base_rec_global_multivar_uv_glorys_15m_1y_unet_1patch_wind/checkpoints/val_total_mse=14.00208-epoch=247.ckpt # when copying from the terminal, be careful to remove the two '\' in 'mse\=...' and 'epoch\=...'
-
+  model_config_path: /Odyssey/private/t22picar/multivar_uv/config/xp/base_rec_global_multivar_uv_glorys_15m_1y_unet_1patch_wind_L4_11d.yaml
+model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/ssh_sst_wind_11d_10y/base_rec_global_multivar_uv_glorys_15m_10y_unet_1patch_wind_11d/checkpoints/val_total_mse=7.22682-epoch=348.ckpt # when copying from the terminal, be careful to remove the two '\' in 'mse\=...' and 'epoch\=...'
 specs:
   pixels_per_degree: 4
 

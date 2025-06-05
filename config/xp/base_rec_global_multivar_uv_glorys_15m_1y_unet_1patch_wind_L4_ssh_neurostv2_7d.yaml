@@ -2,14 +2,14 @@
 
 multivar:
   ssh:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2019_4th.nc
+    var_path: /Odyssey/private/t22picar/data/ssh_L4/NeurOST_SSH-SST_allsat-al_2019_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: zos
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   sst:
-    var_path: /Odyssey/private/t22picar/data/sst_L4/sst_mur_2019_4th.nc
+    var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2019_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: thetao
     input_arch: prior_input
@@ -107,7 +107,7 @@ datamodule:
     test: 
       time: {_target_: builtins.slice,  _args_: ['2019-12-01', '2019-12-01']}
   xrds_kw:
-    patch_dims: { time: 29, lat: 680, lon: 1440}
+    patch_dims: { time: 7, lat: 680, lon: 1440}
     strides: { time: 1, lat: 672, lon: 1432}
     domain_limits: ${domain.train}
   dl_kw: {batch_size: 1, num_workers: 8}

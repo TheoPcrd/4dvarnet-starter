@@ -30,7 +30,6 @@ class MultivarUNet(Multivar4dVarNet):
     def forward(self, batch):
         batch_input = self.multivar_selector.multivar_prior_input(batch).nan_to_num()
         return self.solver(batch_input)
-    
 
 
 class UNet(nn.Module):
@@ -103,3 +102,41 @@ def get_multivar_only_prior_dims_in(multivar_dict, channels_per_dim):
         if var_info.input_arch == 'prior_input':
             dims_in+=1
     return dims_in * channels_per_dim
+
+
+class MultivarUNet_weight(MultivarUNet):
+
+    def __init__(self,*arg,weight,**kwargs):
+        super(self).__init__(*arg,**kwargs)
+        self.weight = weight
+
+    def on_test_epoch_end(self):
+        self.clear_gpu_mem()
+        print('TEST DATA SIZE: {}'.format(torch.cat(self.test_data).size()))
+
+        n_output_dims = self.test_data[0].shape[1]
+
+        for output_dim in range(n_output_dims):
+            rec_da = self.trainer.test_dataloaders.dataset.reconstruct_from_items(
+                torch.cat(self.test_data).index_select(dim=1, index=torch.Tensor([output_dim]).type(torch.int64)).cuda(),
+                self.weight.cpu().numpy()[:self.weight.cpu().numpy().shape[0]//n_output_dims]
+            )
+
+            if isinstance(rec_da, list):
+                rec_da = rec_da[0]
+
+            test_data = rec_da.assign_coords(
+                dict(v0=self.test_quantities)
+            ).to_dataset(dim='v0')
+
+            metric_data = test_data.pipe(self.pre_metric_fn)
+            metrics = pd.Series({
+                metric_n: metric_fn(metric_data)
+                for metric_n, metric_fn in self.metrics.items()
+            })
+
+            print(metrics.to_frame(name="Metrics").to_markdown())
+            if self.logger:
+                test_data.to_netcdf(Path(self.logger.log_dir) / f'test_data_dim{output_dim}.nc')
+                print(Path(self.trainer.log_dir) / f'test_data_dim{output_dim}.nc')
+                self.logger.log_metrics(metrics.to_dict())

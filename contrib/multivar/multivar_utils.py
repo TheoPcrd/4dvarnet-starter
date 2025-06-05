@@ -2,6 +2,23 @@ import numpy as np
 from src.utils import get_constant_crop
 import torch
 
+def get_multivar_aug_dims_noise(multivar_dict):
+    aug_dims_noise = None
+    dim = 0
+
+    for var, var_info in multivar_dict.items():
+        if 'aug_noise' in var_info.keys():
+            if var_info.aug_noise:
+                if aug_dims_noise is None:
+                    aug_dims_noise = []
+    # THE AUGMENTATION WILL ALWAYS WORK ON THE NEXT DIMENSION ONLY
+                aug_dims_noise.append((dim,var_info['aug_noise']))
+
+        if 'mask_path' in var_info.keys():
+            dim += 1
+        dim+=1
+
+    return aug_dims_noise
 
 def get_multivar_aug_dims(multivar_dict):
     aug_dims = None
@@ -81,6 +98,29 @@ def get_multivar_forecast_wei(patch_dims, dims_out, **crop_kw):
     return final_patch_weight
 
 def get_multivar_mapping_wei(patch_dims, dims_out, offset=0, **crop_kw):
+    """
+    return weight for forecast reconstruction:
+    patch_dims: dimension of the patches used
+
+    linear from 0 to 1 where there are obs
+    linear from 1 to 0.5 for 7 days of forecast
+    0 elsewhere
+    """
+    pw = get_constant_crop(patch_dims, **crop_kw)
+    time_patch_weight = np.fromfunction(
+        lambda t, *a: (
+            (1 - np.abs(offset + 2 * t - patch_dims["time"]) / patch_dims["time"]) * pw
+        ),
+        patch_dims.values(),
+    )
+    
+    # assuming dims_out = time * n_vars_out
+    n_vars_out = dims_out // patch_dims['time']
+    final_patch_weight = np.concatenate([time_patch_weight]*n_vars_out, axis=0)
+
+    return final_patch_weight
+
+def get_multivar_mapping_wei_theo(patch_dims, dims_out, offset=0, **crop_kw):
     """
     return weight for forecast reconstruction:
     patch_dims: dimension of the patches used

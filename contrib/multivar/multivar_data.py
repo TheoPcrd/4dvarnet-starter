@@ -8,23 +8,34 @@ import time
 from dask.diagnostics.progress import ProgressBar
 
 class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
-    def __init__(self, *args, aug_dims=None, **kwargs):
+    def __init__(self, *args, aug_dims=None, aug_dims_noise=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.aug_dims = aug_dims
+        self.aug_dims_noise = aug_dims_noise
+        self._rng = np.random.default_rng()
 
         if self.aug_dims is not None:
             self.time_perm = np.random.permutation(self.da_dims['time'])
-
+    
     def apply_augmentation(self, item, sl):
-        if self.aug_dims is None:
+
+        if self.aug_dims is None and self.aug_dims_noise is None:
             return item
         
-        for (aug_input_idx, aug_target_idx) in self.aug_dims:
-            sl_aug = sl.copy()
-            sl_aug['time'] = self.time_perm[sl['time']]
-            aug_item = self.da.isel(**sl_aug)
-            aug_item_input = np.where(np.isfinite(aug_item.values[aug_input_idx,:]), item.values[aug_target_idx,:], np.full_like(aug_item.values[aug_target_idx,:], np.nan))
-            item.values[aug_input_idx,:] = aug_item_input
+        #print("Apply_augmentation")
+
+        if self.aug_dims is not None: 
+            for (aug_input_idx, aug_target_idx) in self.aug_dims:
+                sl_aug = sl.copy()
+                sl_aug['time'] = self.time_perm[sl['time']]
+                aug_item = self.da.isel(**sl_aug)
+                aug_item_input = np.where(np.isfinite(aug_item.values[aug_input_idx,:]), item.values[aug_target_idx,:], np.full_like(aug_item.values[aug_target_idx,:], np.nan))
+                item.values[aug_input_idx,:] = aug_item_input
+
+        if self.aug_dims_noise is not None:
+            for (aug_noise_idx, aug_noise_value) in self.aug_dims_noise:
+                noise = self._rng.uniform(-aug_noise_value, aug_noise_value, item.values[aug_noise_idx].shape).astype(np.float32)
+                item.values[aug_noise_idx] = item.values[aug_noise_idx] + noise
 
         return item
 
@@ -91,9 +102,10 @@ class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
 
 class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
 
-    def __init__(self, multivar_da, domains, xrds_kw, dl_kw, aug_dims=None, norm_stats=None, **kwargs):
+    def __init__(self, multivar_da, domains, xrds_kw, dl_kw, aug_dims=None, aug_dims_noise=None, norm_stats=None, **kwargs):
         self.input_da, self.multivar_information = multivar_da
         self.aug_dims = aug_dims
+        self.aug_dims_noise = aug_dims_noise
         super().__init__(self.input_da, domains, xrds_kw, dl_kw, norm_stats=norm_stats, **kwargs)
         self.multivar_info()
 
@@ -140,7 +152,7 @@ class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
         # calling MovingPatch Datasets, rand=True for train only
         post_fn = self.post_fn()
         self.train_ds = MultivarXrDataset(
-            self.input_da.sel(self.domains['train']), **self.xrds_kw, aug_dims=self.aug_dims, postpro_fn=post_fn, rand=True
+            self.input_da.sel(self.domains['train']), **self.xrds_kw, aug_dims=self.aug_dims,aug_dims_noise=self.aug_dims_noise, postpro_fn=post_fn, rand=True
         )
         self.val_ds = MultivarXrDataset(
             self.input_da.sel(self.domains['val']), **self.xrds_kw, postpro_fn=post_fn, rand=False
@@ -207,7 +219,7 @@ class MultivarNfNDataModule(MultivarDataModule):
         # calling MovingPatch Datasets, rand=True for train only
         post_fn = self.post_fn()
         self.train_ds = MultivarNfNXrDataset(
-            self.input_da.sel(self.domains['train']), **self.xrds_kw, aug_dims=self.aug_dims, postpro_fn=post_fn, rand=True
+            self.input_da.sel(self.domains['train']), **self.xrds_kw, aug_dims=self.aug_dims, aug_dims_noise=self.aug_dims_noise, postpro_fn=post_fn, rand=True
         )
         self.val_ds = MultivarNfNXrDataset(
             self.input_da.sel(self.domains['val']), **self.xrds_kw, postpro_fn=post_fn, rand=False
