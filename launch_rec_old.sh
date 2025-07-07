@@ -9,5 +9,5 @@ export HOME=/Odyssey/private/t22picar/
 source "/Odyssey/private/t22picar/miniforge3/etc/profile.d/conda.sh"
 conda activate 4dvarnet-daniel
 
-#HYDRA_FULL_ERROR=1 srun python main.py xp='base_rec_global_multivar_uv_glorys_15m_1y'
-HYDRA_FULL_ERROR=1 srun python main.py xp='base_rec_global_multivar_uv_glorys_0m_10y_unet_1patch_wind_11d_pad'
+#HYDRA_FULL_ERROR=1 srun python main.py xp='ose_pipeline_1y_global_4_multivar_15m_unet_1patch_test_mld_bathy_wind_L4'
+HYDRA_FULL_ERROR=1 srun python main.py xp='ose_pipeline_1y_global_4_multivar_15m_unet_1patch_test_L4'

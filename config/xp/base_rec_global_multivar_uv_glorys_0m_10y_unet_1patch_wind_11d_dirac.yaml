@@ -111,6 +111,9 @@ datamodule:
     strides: { time: 1, lat: 672, lon: 1432}
     domain_limits: ${domain.train}
   dl_kw: {batch_size: 1, num_workers: 8}
+  norm_stats: [[-1.39947670e-01,  1.38521581e+01, -7.87059148e-03, -2.79030473e-01,
+       -1.51604884e-03,  8.53338346e-03],[ 0.72084153, 11.67357655,  5.02776089,  4.33204108,  0.17698882,
+        0.14522934]]
 
 model:
   _target_: contrib.multivar.multivar_models_unet.MultivarUNet
@@ -122,7 +125,7 @@ model:
     lr: 1e-3
     T_max: ${trainer.max_epochs}
   rec_weight:
-      _target_: contrib.multivar.multivar_utils.get_multivar_mapping_wei
+      _target_: contrib.multivar.multivar_utils.get_multivar_mapping_wei_dirac
       patch_dims: ${datamodule.xrds_kw.patch_dims}
       crop: {time: 0, lat: 4, lon: 4}
       dims_out:

@@ -102,17 +102,22 @@ class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
 
 class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
 
-    def __init__(self, multivar_da, domains, xrds_kw, dl_kw, aug_dims=None, aug_dims_noise=None, norm_stats=None, **kwargs):
+    def __init__(self, multivar_da, domains, xrds_kw, dl_kw, norm_stats=None, aug_dims=None, aug_dims_noise=None, **kwargs):
         self.input_da, self.multivar_information = multivar_da
         self.aug_dims = aug_dims
         self.aug_dims_noise = aug_dims_noise
+        self._norm_stats = norm_stats
         super().__init__(self.input_da, domains, xrds_kw, dl_kw, norm_stats=norm_stats, **kwargs)
         self.multivar_info()
+
 
     def norm_stats(self):
         if self._norm_stats is None:
             self._norm_stats = self.train_mean_std()
-            print("Norm stats", self._norm_stats)
+            print("Norm stats computed", self._norm_stats)
+        else:
+            self._norm_stats = (np.array(self._norm_stats[0]),np.array(self._norm_stats[1]))
+            print("Norm stats defined", self._norm_stats)
         return self._norm_stats
     
     def placeholder_norm_stats(self):

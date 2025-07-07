@@ -120,22 +120,19 @@ def get_multivar_mapping_wei(patch_dims, dims_out, offset=0, **crop_kw):
 
     return final_patch_weight
 
-def get_multivar_mapping_wei_theo(patch_dims, dims_out, offset=0, **crop_kw):
+def get_multivar_mapping_wei_dirac(patch_dims, dims_out, offset=0, **crop_kw):
     """
-    return weight for forecast reconstruction:
-    patch_dims: dimension of the patches used
-
-    linear from 0 to 1 where there are obs
-    linear from 1 to 0.5 for 7 days of forecast
-    0 elsewhere
+    return a dirac weighted fonction at the center of the patch
     """
     pw = get_constant_crop(patch_dims, **crop_kw)
+
     time_patch_weight = np.fromfunction(
-        lambda t, *a: (
-            (1 - np.abs(offset + 2 * t - patch_dims["time"]) / patch_dims["time"]) * pw
-        ),
+        lambda t, *a: (((offset + 2 * t - patch_dims["time"]))),
         patch_dims.values(),
     )
+
+    for t in range(patch_dims.time):
+        time_patch_weight[t,:,:] = np.where(time_patch_weight[t,:,:]==0,pw[t],0)
     
     # assuming dims_out = time * n_vars_out
     n_vars_out = dims_out // patch_dims['time']

@@ -2,14 +2,14 @@
 
 multivar:
   ssh:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/glorys_0m/glorys_multivar_0m_2010-2018.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: zos
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   sst:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/glorys_0m/glorys_multivar_0m_2010-2018.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: thetao
     input_arch: prior_input
