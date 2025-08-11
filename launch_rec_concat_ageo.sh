@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --partition=Odyssey                         # Partition name
-#SBATCH --gres=gpu:l40s:4  #gpu:a40:3  #gpu:h100:2  #                           # GPU request
+#SBATCH --gres=gpu:a40:3 #gpu:l40s:4                          # GPU request
 #SBATCH --job-name=rec_uv                        # Job name
 #SBATCH --cpus-per-gpu=12    # 12 CPUs for each GPU
 #SBATCH --output=log/job_%j.log # Standard output and error log (%j for jobid)
-#SBATCH --mem=480G
+#SBATCH --mem=180G
 
 export HOME=/Odyssey/private/t22picar/
 source "/Odyssey/private/t22picar/miniforge3/etc/profile.d/conda.sh"
@@ -21,9 +21,9 @@ YAML_FILE="/Odyssey/private/t22picar/multivar_uv/config/xp/ose_pipeline_1y_globa
 xp_name=$(grep -m 1 'xp_name:' "$YAML_FILE" | awk '{print $2}')
 
 #cd rec/
-srun python concat_rec_saving_filter.py "$xp_name" # 
+#srun python concat_rec_saving_filter.py "$xp_name" # 
 
-#srun python concat_rec_saving_filter.py #--> Add a mask and correct saving with daily output
+srun python concat_rec_saving_filter_ageo.py "$xp_name" #--> Add a mask and correct saving with daily output
 
 conda activate woc_env
 

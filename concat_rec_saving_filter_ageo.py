@@ -2,9 +2,9 @@ import xarray as xr
 import numpy as np
 import sys
 import hydra
-
 from typing import Optional
 import datetime
+
 
 ATTRS ={'time': {'dtype': 'int64',}, # 'units': 'days since 2019-01-01', }, 
         'lon': {'dtype': 'float32', 'valid_min': -180., 'valid_max': 180.,
@@ -78,13 +78,13 @@ def save(ds: xr.Dataset, listkey: list, file_out: str,
     #ds.to_netcdf(file_out, 'w', format="NETCDF4", encoding=encoding)
     return ds,encoding
 
+#with hydra.initialize('config', version_base='1.3'):
+#    cfg = hydra.compose("main", overrides=[
+#        'xp=ose_pipeline_1y_global_4_multivar_15m_unet_1patch_test_L4'])
 
-with hydra.initialize('config', version_base='1.3'):
-    cfg = hydra.compose("main", overrides=[
-        'xp=ose_pipeline_2019_global_4th_1patch_L4_generic'])
+#path_file=cfg.xp_name
 
-path_file=cfg.xp_name
-
+path_file = sys.argv[1]
 print(path_file)
 
 tstart_1='2019-01-01'
@@ -115,11 +115,8 @@ res_vo_2 = res_vo_2.sel(time=slice(tstart_2, tend_2))
 res_vo = xr.concat([res_vo_1, res_vo_2], dim='time')
 res_vo = res_vo.rename({'out': 'vgos'})
 ds_maps = xr.merge([res_uo, res_vo])
-#ds_maps.to_netcdf(f"rec/{path_file}/test_data.nc")
 
-###
-### ADD MASK + NETCDF CONFIG
-###
+#ds_maps.to_netcdf(f"rec/{path_file}/test_data.nc")
 
 ### FILTER ####
 mask = np.load('/Odyssey/private/t22picar/2023a_SSH_mapping_OSE/nb_diags_THEO/uv_score_mask/mask_glorys_4th.npy')
@@ -127,14 +124,36 @@ mask = mask[np.newaxis,:,:]
 mask = mask.repeat(365,axis=0)
 ds_maps = ds_maps.where(mask, np.nan)
 
-# Récupérer la liste des variables sans les dimensions
-variables = [var for var in ds_maps.variables if var not in ds_maps.dims]
-folder_out = path_file
-ds_maps,encoding = save(ds_maps,variables,folder_out)
+from glob import glob
+import xarray as xr
+
+ds_maps_ageo = ds_maps.copy()
+
+if "duacs" in path_file:
+    print("duacs geostrophy")
+    folder_data = "/Odyssey/private/t22picar/multivar_uv/rec/duacs_geos/daily/"
+    #folder_data = "/Odyssey/private/t22picar/multivar_uv/rec/duacs_geos_lucile/daily/"
+    list_of_maps = sorted(glob(folder_data+'/unet_rec_*.nc'))
+    maps_geo = xr.open_mfdataset(list_of_maps, combine='nested', concat_dim='time')
+
+if "neurost" in path_file:
+    print("neurost geostrophy")
+    folder_data = "/Odyssey/private/t22picar/data/uv/NeurOST_SST-SSH_uv_allsat-al_2019_4th.nc"
+    maps_geo = xr.open_dataset(folder_data).sel(time=slice("2019-01-01","2019-12-31"))
+
+ds_maps.ugos.values = ds_maps.ugos.values + maps_geo.ugos.values
+ds_maps.vgos.values = ds_maps.vgos.values + maps_geo.vgos.values
 
 import os
-dossier_path_daily = path_file+'/daily'
+# Chemin du dossier que vous souhaitez créer
+dossier_path_daily = f'./rec/{path_file}/daily'
+# Créer le dossier
 os.makedirs(dossier_path_daily, exist_ok=True)
+
+### SAVING ####
+# Récupérer la liste des variables sans les dimensions
+variables = [var for var in ds_maps.variables if var not in ds_maps.dims]
+ds_maps,encoding = save(ds_maps,variables,dossier_path_daily)
 
 #Select day per day 
 from datetime import datetime, timedelta
@@ -147,10 +166,34 @@ current_date = start_date
 while current_date < end_date:
     #print(current_date.strftime('%Y-%m-%d'))  # Affiche la date au format AAAA-MM-JJ
     ds_map_day=ds_maps.sel(time=current_date)
-    folder_out = path_file+f"/daily/unet_rec_{current_date.strftime('%Y-%m-%d')}.nc"
+    folder_out = dossier_path_daily+f"/unet_rec_{current_date.strftime('%Y-%m-%d')}.nc"
     ds_map_day.to_netcdf(folder_out, 'w', format="NETCDF4", encoding=encoding)
     current_date += timedelta(days=1)  # Passe au jour suivant
 
+
+#Chemin du dossier que vous souhaitez créer
+dossier_path_daily = f'./rec/{path_file}/daily_ageos'
+# Créer le dossier
+os.makedirs(dossier_path_daily, exist_ok=True)
+
+### SAVING ####
+# Récupérer la liste des variables sans les dimensions
+variables = [var for var in ds_maps_ageo.variables if var not in ds_maps_ageo.dims]
+ds_maps_ageo,encoding = save(ds_maps_ageo,variables,dossier_path_daily)
+
+# Boucle sur chaque jour de la période
+current_date = start_date
+print("ageo saving")
+print(current_date)
+while current_date < end_date:
+    #print(current_date.strftime('%Y-%m-%d'))  # Affiche la date au format AAAA-MM-JJ
+    ds_map_day=ds_maps_ageo.sel(time=current_date)
+    folder_out = dossier_path_daily+f"/unet_rec_{current_date.strftime('%Y-%m-%d')}.nc"
+    ds_map_day.to_netcdf(folder_out, 'w', format="NETCDF4", encoding=encoding)
+    current_date += timedelta(days=1)  # Passe au jour suivant
+
+
+"""
 import shutil
 # Vérifie si le fichier test_data.nc existe dans le dossier courant
 if os.path.isfile(f"rec/{path_file}/test_data.nc"):
@@ -169,3 +212,4 @@ if os.path.isfile(f"rec/{path_file}/test_data.nc"):
         print("Le dossier 2019_global_4_2 n'existe pas.")
 else:
     print("Le fichier test_data.nc n'existe pas.")
+"""

@@ -2,42 +2,42 @@
 
 multivar:
   ssh:
-    var_path: /Odyssey/private/t22picar/data/glorys_0m/glorys_multivar_0m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2019_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: zos
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   sst:
-    var_path: /Odyssey/private/t22picar/data/glorys_0m/glorys_multivar_0m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2019_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: thetao
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   u10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_2010-2018_dailymean_4th.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_2019_dailymean_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: u10
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   v10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_2010-2018_dailymean_4th.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_2019_dailymean_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: v10
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   uo:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_15.81m_2019-01-01-2020-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: uo
     input_arch: no_input
     output_arch: full_output
     broadcast_time: False
   vo:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_15.81m_2019-01-01-2020-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: vo
     input_arch: no_input
@@ -101,17 +101,22 @@ datamodule:
     full_time_domain: ${datamodule.domains}
   domains:
     train:
-      time: {_target_: builtins.slice, _args_: ['2010-01-01', '2017-12-31']}
+      time: {_target_: builtins.slice, _args_: ['2019-01-01', '2019-01-01']}
     val: 
-      time: {_target_: builtins.slice, _args_: ['2018-01-01', '2018-12-31']}
+      time: {_target_: builtins.slice, _args_: ['2019-01-01', '2019-02-01']}
     test: 
-      time: {_target_: builtins.slice,  _args_: ['2018-01-01', '2018-12-31']}
+      time: {_target_: builtins.slice,  _args_: ['2019-12-01', '2019-12-01']}
   xrds_kw:
-    patch_dims: { time: 7, lat: 680, lon: 1440}
+    patch_dims: { time: 17, lat: 680, lon: 1440}
     strides: { time: 1, lat: 672, lon: 1432}
     domain_limits: ${domain.train}
-  dl_kw: {batch_size: 1, num_workers: 2}
-
+  dl_kw: {batch_size: 1, num_workers: 8}
+  #norm_stats: [[-1.39947670e-01,  1.38521581e+01, -7.87059148e-03, -2.79030473e-01,
+  #     -1.51604884e-03,  8.53338346e-03],[ 0.72084153, 11.67357655,  5.02776089,  4.33204108,  0.17698882,
+  #      0.14522934]]
+  norm_stats: [[-1.57375389e-01,  1.40099629e+01,  1.49226288e-02,  1.72673578e-01,
+        2.98354933e-03,  3.23969536e-03],[ 0.72239659, 11.67054815,  5.28805702,  4.26651655,  0.17570879,
+        0.14322635]]
 model:
   _target_: contrib.multivar.multivar_models_unet.MultivarUNet
   multivar_selector: ${multivar_selector}
@@ -124,7 +129,7 @@ model:
   rec_weight:
       _target_: contrib.multivar.multivar_utils.get_multivar_mapping_wei
       patch_dims: ${datamodule.xrds_kw.patch_dims}
-      crop: {time: 0, lat: 4, lon: 4}
+      crop: {time: 0, lat: 0, lon: 0}
       dims_out:
         _target_: contrib.multivar.multivar_utils.get_multivar_prior_dims_out
         multivar_dict: ${multivar}
@@ -178,7 +183,7 @@ model:
   pre_metric_fn:
         _target_: xarray.Dataset.sel
         _partial_: True
-        time: {_target_: builtins.slice, _args_: ["2021-03-14", "2021-04-20"]}
+        time: {_target_: builtins.slice, _args_: ["2019-12-01", "2019-12-31"]}
         lat: ${domain.test.lat}
         lon: ${domain.test.lon}
 

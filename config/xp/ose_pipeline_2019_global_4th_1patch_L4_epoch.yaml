@@ -1,6 +1,6 @@
 # @package _global_
 
-xp_name: ssh_duacs_sst_w_to_u_v_11d_15m_ageos_no_sst # name of your experience (will create folders using this name)
+xp_name: ssh_duacs_sst_w_to_u_v_11d_15m_ageos_120 # name of your experience (will create folders using this name)
 #data_name: 2019_global_4
 data_name: 2019_global_4
 
@@ -9,8 +9,8 @@ paths:
   rec_path: /Odyssey/private/t22picar/multivar_uv/rec/ # your reconstruction will be stored in <rec_path>/<xp_name>/<data_name>/
   metrics_path: /Odyssey/private/t22picar/multivar_uv/metrics/
 
-  model_config_path: /Odyssey/private/t22picar/multivar_uv/config/xp/base_rec_global_multivar_uv_glorys_wind_11d_duacs_norm_ageos_no_sst.yaml
-  model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/base_rec_global_multivar_uv_glorys_15m_10y_unet_1patch_wind_11d_ageos_no_sst/16-54-23/base_rec_global_multivar_uv_glorys_15m_10y_unet_1patch_wind_11d_ageos_no_sst/checkpoints/val_total_mse=4.32700-epoch=249.ckpt
+  model_config_path: /Odyssey/private/t22picar/multivar_uv/config/xp/base_rec_global_multivar_uv_glorys_wind_11d_duacs_norm_ageos.yaml
+  model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/Ageos/val_total_mse=4.86559-epoch=120.ckpt # when copying from the terminal, be careful to remove the two '\' in 'mse\=...' and 'epoch\=...'
   #model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/10-04-46/base_rec_global_multivar_uv_glorys_15m_10y_unet_1patch_11d/checkpoints/val_total_mse=7.73697-epoch=338.ckpt # when copying from the terminal, be careful to remove the two '\' in 'mse\=...' and 'epoch\=...'
 
 specs:

@@ -52,24 +52,24 @@ domain:
     lat:
       _target_: builtins.slice
       _args_:
-      - -80
-      - 90
+      - -44
+      - -29
     lon:
       _target_: builtins.slice
       _args_:
-      - -180
-      - 180
+      - 13
+      - 33
   test:
     lat:
       _target_: builtins.slice
       _args_:
-      - -79
-      - 89
+      - -43
+      - -28
     lon:
       _target_: builtins.slice
       _args_:
-      - -179
-      - 179
+      - 12
+      - 32
 
 trainer:
   _target_: pytorch_lightning.Trainer
@@ -89,8 +89,9 @@ trainer:
     - _target_: pytorch_lightning.callbacks.LearningRateMonitor
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
       monitor: val_total_mse
-      save_top_k: 3
+      save_top_k: -1
       filename: '{val_total_mse:.5f}-{epoch:03d}'
+      every_n_epochs: 50
 
 datamodule:
   _target_: contrib.multivar.multivar_data.MultivarDataModule
@@ -107,10 +108,10 @@ datamodule:
     test: 
       time: {_target_: builtins.slice,  _args_: ['2018-01-01', '2018-12-31']}
   xrds_kw:
-    patch_dims: { time: 7, lat: 680, lon: 1440}
-    strides: { time: 1, lat: 672, lon: 1432}
+    patch_dims: { time: 11, lat: 60, lon: 184}
+    strides: { time: 1, lat: 60, lon: 184}
     domain_limits: ${domain.train}
-  dl_kw: {batch_size: 1, num_workers: 2}
+  dl_kw: {batch_size: 1, num_workers: 8}
 
 model:
   _target_: contrib.multivar.multivar_models_unet.MultivarUNet

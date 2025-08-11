@@ -1,0 +1,13 @@
+{
+    "data_type": "duacs_geos_15m",
+    "label": "duacs_geos_15m",
+    "path": "/Odyssey/private/t22picar/multivar_uv/rec/duacs_geos_15m/daily/",
+    "pattern": "unet_rec",
+    "match": "unet_rec_(\\d{4})-(\\d{2})-(\\d{2}).nc",
+    "varu": "ugos",
+    "varv": "vgos",
+    "nlon": "lon",
+    "nlat": "lat",
+    "time_coverage_hours": 24,
+    "fmt": "%Y-%m-%dT%H:%M:%S.%fZ"
+}

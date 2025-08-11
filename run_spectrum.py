@@ -1,0 +1,52 @@
+import velocity_metrics.utils.constant as const 
+import velocity_metrics.spectrum.spectrum as spectrum 
+import sys  
+import datetime
+from IPython.display import display, Markdown
+import warnings 
+warnings.filterwarnings("ignore") 
+sys.path.append('/Odyssey/private/t22picar/2024_DC_WOC-ESA/')
+import json
+
+xp_name = sys.argv[1]
+print(xp_name)
+
+# Calcul des metrics 
+
+if "_0m" in xp_name:
+    depth = 0
+    depth_ind=0
+elif "_15m" in xp_name:
+    depth = 15
+    depth_ind=1
+else: 
+    print("no depth in xp name")
+    depth = 0
+    depth_ind=0
+# Formater depth avec deux chiffres significatifs
+depth_formatted = "{:02}".format(depth)
+
+input_dict = '/Odyssey/private/t22picar/multivar_uv/metric/dictionary/'
+input_drifter = '/Odyssey/private/t22picar/2024_DC_WOC-ESA/dc_data/drifter/'
+outputdir = f'/Odyssey/private/t22picar/multivar_uv/rec/{xp_name}/metric'
+
+path_dict_product = input_dict+f'{xp_name}.json' 
+
+first_date = datetime.datetime.strptime('20190101T000000Z', const.FMT)
+last_date  = datetime.datetime.strptime('20191231T000000Z', const.FMT) 
+
+outputdir = f'/Odyssey/private/t22picar/multivar_uv/rec/{xp_name}/metric/Agulhas/'
+
+path_dict_region = input_dict+'region_Agulhas.json'
+
+dic_spectrum = spectrum.run([path_dict_product], path_dict_region, depth = depth_ind, output_dir= outputdir)
+
+outputdir = f'/Odyssey/private/t22picar/multivar_uv/rec/{xp_name}/metric/GulfStream/'
+path_dict_region = input_dict+'region_GulfStream.json'
+
+dic_spectrum = spectrum.run([path_dict_product], path_dict_region, depth = depth_ind, output_dir= outputdir)
+
+outputdir = f'/Odyssey/private/t22picar/multivar_uv/rec/{xp_name}/metric/Mediterranean/'
+path_dict_region = input_dict+'region_Mediterranean.json'
+
+dic_spectrum = spectrum.run([path_dict_product], path_dict_region, depth = depth_ind, output_dir= outputdir)

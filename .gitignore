@@ -17,6 +17,7 @@ reproduce/*.ckpt
 *.png
 log/
 rec/
+rec_old/
 data/
 
 2023a_SSH_mapping_OSE/data

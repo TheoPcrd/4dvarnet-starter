@@ -82,7 +82,7 @@ trainer:
     save_dir: ${hydra:runtime.output_dir}
     name: ${hydra:runtime.choices.xp}
     version: ''
-  max_epochs: 350
+  max_epochs: 1000
   limit_train_batches: 102
   callbacks:
     - _target_: src.versioning_cb.VersioningCallback
@@ -107,10 +107,10 @@ datamodule:
     test: 
       time: {_target_: builtins.slice,  _args_: ['2018-01-01', '2018-12-31']}
   xrds_kw:
-    patch_dims: { time: 7, lat: 680, lon: 1440}
+    patch_dims: { time: 11, lat: 680, lon: 1440}
     strides: { time: 1, lat: 672, lon: 1432}
     domain_limits: ${domain.train}
-  dl_kw: {batch_size: 1, num_workers: 2}
+  dl_kw: {batch_size: 1, num_workers: 8}
 
 model:
   _target_: contrib.multivar.multivar_models_unet.MultivarUNet

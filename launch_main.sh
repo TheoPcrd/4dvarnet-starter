@@ -1,13 +1,16 @@
 #!/bin/bash
 #SBATCH --partition=Odyssey                         # Partition name
-#SBATCH --gres=gpu:a100:1                          # GPU request
+#SBATCH --gres=gpu:h100:2             # GPU request
 #SBATCH --job-name=multivar                        # Job name
 #SBATCH --cpus-per-gpu=12    # 12 CPUs for each GPU
 #SBATCH --output=log/job_%j.log # Standard output and error log (%j for jobid)
+#SBATCH --mem=480G
 
 export HOME=/Odyssey/private/t22picar/
 source "/Odyssey/private/t22picar/miniforge3/etc/profile.d/conda.sh"
 conda activate 4dvarnet-daniel
 
 #HYDRA_FULL_ERROR=1 srun python main.py xp='base_rec_global_multivar_uv_glorys_15m_1y'
-HYDRA_FULL_ERROR=1 srun python main.py xp='base_rec_global_multivar_uv_glorys_0m_10y_unet_1patch_wind_11d_pad'
+#HYDRA_FULL_ERROR=1 srun python main.py xp='base_rec_global_multivar_uv_glorys_15m_10y_4dvar_1patch_wind_11d'
+
+HYDRA_FULL_ERROR=1 srun python main.py xp='base_rec_global_multivar_uv_glorys_15m_10y_unet_1patch_wind_11d_ageos_no_sst'

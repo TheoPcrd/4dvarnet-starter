@@ -9,6 +9,7 @@ multivar:
     output_arch: no_output
     broadcast_time: False
     aug_noise: .03 
+    
   sst:
     var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
@@ -17,6 +18,7 @@ multivar:
     output_arch: no_output
     broadcast_time: False
     aug_noise: .03 
+
   u10:
     var_path: /Odyssey/private/t22picar/data/era5/era5_2010-2018_dailymean_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
@@ -24,7 +26,7 @@ multivar:
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
-    aug_noise: .03 
+
   v10:
     var_path: /Odyssey/private/t22picar/data/era5/era5_2010-2018_dailymean_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
@@ -32,7 +34,7 @@ multivar:
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
-    aug_noise: .03 
+
   uo:
     var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle

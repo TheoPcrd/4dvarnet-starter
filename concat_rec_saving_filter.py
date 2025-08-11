@@ -5,7 +5,8 @@ import hydra
 from typing import Optional
 import datetime
 
-ATTRS ={'time': {'dtype': 'datetime64',}, # 
+
+ATTRS ={'time': {'dtype': 'int64',}, # 'units': 'days since 2019-01-01', }, 
         'lon': {'dtype': 'float32', 'valid_min': -180., 'valid_max': 180.,
                 'long_name': 'longitude', 'standard_name': 'longitude',
                 'units': 'degrees_east'},
@@ -21,13 +22,13 @@ ATTRS ={'time': {'dtype': 'datetime64',}, #
                 'long_name': 'Northward total velocity',
                 },
                 }
-        
 COMPLEVEL = 4
 ZLIB = True
 FV32 = 1.e+20
 ENC_FV = {'zlib': ZLIB, 'complevel': COMPLEVEL, '_FillValue': FV32,
           'dtype': 'float32'}
 ENC = {'zlib': ZLIB, 'complevel': COMPLEVEL, 'dtype': 'float32'}
+
 
 def save(ds: xr.Dataset, listkey: list, file_out: str, 
          ATTR_VARS: Optional[dict] = ATTRS, fillvalue: Optional[float] = FV32):
@@ -40,20 +41,26 @@ def save(ds: xr.Dataset, listkey: list, file_out: str,
         ds[key].values[np.isnan(ds[key].values)] = fillvalue
         ds = ds.assign({key: (['time', 'lat', 'lon'], ds[key].values,
                             dic_attr)})
+
         encoding[key] = ENC_FV
         print(ENC_FV)
     for key in ('lon', 'lat', 'time'):
+    #for key in ('lon', 'lat'):
         dic_attr = {}
         if key in ATTR_VARS.keys():
             dic_attr = ATTR_VARS[key]
         ds = ds.assign({key: ([key,], ds[key].values,
                             dic_attr)})
         encoding[key] = ENC
-    encoding['time']['dtype'] = 'datetime64'
+    encoding['time']['dtype'] = 'int64'
+    encoding['lat']['dtype'] = 'float32'
+    encoding['lon']['dtype'] = 'float32'
+    
     print(encoding)
 
     t0 = ds['time'].values[0] - np.timedelta64(12, 'h')
     t1 = ds['time'].values[-1] + np.timedelta64(12, 'h')
+
     ds.attrs['title'] = 'multivar_uv'
     ds.attrs['project'] = 'multivar_uv'
     ds.attrs['summary'] = ''
@@ -68,15 +75,16 @@ def save(ds: xr.Dataset, listkey: list, file_out: str,
     ds.attrs['geospatial_lon_max'] = f'{np.max(ds["lon"].values)}E'
     ds.attrs['time_coverage_start'] = np.datetime_as_string(t0, unit='s')
     ds.attrs['time_coverage_end'] = np.datetime_as_string(t1, unit='s')
-    ds.to_netcdf(file_out, 'w', format="NETCDF4", encoding=encoding)
+    #ds.to_netcdf(file_out, 'w', format="NETCDF4", encoding=encoding)
+    return ds,encoding
 
+#with hydra.initialize('config', version_base='1.3'):
+#    cfg = hydra.compose("main", overrides=[
+#        'xp=ose_pipeline_1y_global_4_multivar_15m_unet_1patch_test_L4'])
+#path_file=cfg.xp_name
 
-with hydra.initialize('config', version_base='1.3'):
-    cfg = hydra.compose("main", overrides=[
-        'xp=ose_pipeline_2019_global_4th_1patch_L4_generic'])
-
-path_file=cfg.xp_name
-
+# Récupération du xp_name 
+path_file = sys.argv[1]
 print(path_file)
 
 tstart_1='2019-01-01'
@@ -117,13 +125,37 @@ mask = mask.repeat(365,axis=0)
 ds_maps = ds_maps.where(mask, np.nan)
 
 
+import os
+# Chemin du dossier que vous souhaitez créer
+dossier_path_daily = f'./rec/{path_file}/daily'
+# Créer le dossier
+os.makedirs(dossier_path_daily, exist_ok=True)
+
+
 ### SAVING ####
-folder_out = f"rec/{path_file}/test_data.nc"
 # Récupérer la liste des variables sans les dimensions
 variables = [var for var in ds_maps.variables if var not in ds_maps.dims]
-ds_maps = save(ds_maps,variables,folder_out)
+ds_maps,encoding = save(ds_maps,variables,dossier_path_daily)
 
-import os 
+
+#Select day per day 
+from datetime import datetime, timedelta
+# Définir la date de début et la date de fin
+start_date = datetime(2019, 1, 1)
+end_date = datetime(2020, 1, 1)
+
+# Boucle sur chaque jour de la période
+current_date = start_date
+while current_date < end_date:
+    #print(current_date.strftime('%Y-%m-%d'))  # Affiche la date au format AAAA-MM-JJ
+    ds_map_day=ds_maps.sel(time=current_date)
+    folder_out = dossier_path_daily+f"/unet_rec_{current_date.strftime('%Y-%m-%d')}.nc"
+    ds_map_day.to_netcdf(folder_out, 'w', format="NETCDF4", encoding=encoding)
+    current_date += timedelta(days=1)  # Passe au jour suivant
+
+
+
+"""
 import shutil
 # Vérifie si le fichier test_data.nc existe dans le dossier courant
 if os.path.isfile(f"rec/{path_file}/test_data.nc"):
@@ -142,3 +174,4 @@ if os.path.isfile(f"rec/{path_file}/test_data.nc"):
         print("Le dossier 2019_global_4_2 n'existe pas.")
 else:
     print("Le fichier test_data.nc n'existe pas.")
+"""

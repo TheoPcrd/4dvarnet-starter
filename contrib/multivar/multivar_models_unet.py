@@ -16,6 +16,34 @@ import kornia.filters as kfilts
 
 class MultivarUNet(Multivar4dVarNet):
 
+    def multivar_step_theo(self, batch, phase=""):
+        out = self(batch=batch)
+        output_var_names = self.multivar_selector.multivar_output_var_names()
+        size_t = out.size(1) // len(output_var_names)
+
+        out = out.view(out.size(0), len(output_var_names), size_t, out.size(2), out.size(3))
+
+        loss = None
+        total_mse = None
+
+        if phase=="val":
+                loss_i = self.weighted_mse(out[:,i] - self.multivar_selector.multivar_obs_input(batch).view_as(out)[:,i], self.rec_weight[:out.size(2)])
+            #
+        else:     
+            for i, var in enumerate(output_var_names):
+                loss_i = self.weighted_mse(out[:,i] - self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i], self.rec_weight[:out.size(2)])
+                with torch.no_grad():
+                    mse_i = 10000 * loss_i * self.output_norm_stats[1][i]**2
+                    self.log(f"{phase}_{var}_mse", mse_i, prog_bar=True, on_step=False, on_epoch=True)
+                    self.log(f"{phase}_{var}_loss", loss_i, prog_bar=True, on_step=False, on_epoch=True)
+                loss = loss_i if loss is None else loss + loss_i
+                total_mse = mse_i if total_mse is None else total_mse + mse_i
+
+        with torch.no_grad():
+            self.log(f"{phase}_total_mse", total_mse, prog_bar=True, on_step=False, on_epoch=True)
+              
+        return loss, out
+
     def step(self, batch, phase=""):
 
         # SKIP BATCH TO IMPLEMENT #

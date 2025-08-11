@@ -1,0 +1,13 @@
+{
+    "data_type": "ssh_duacs_sst_w_to_u_v_7d_15m_norm_corr",
+    "label": "ssh_duacs_sst_w_to_u_v_7d_15m_norm_corr",
+    "path": "/Odyssey/private/t22picar/multivar_uv/rec/ssh_duacs_sst_w_to_u_v_7d_15m_norm_corr/daily/",
+    "pattern": "unet_rec",
+    "match": "unet_rec_(\\d{4})-(\\d{2})-(\\d{2}).nc",
+    "varu": "ugos",
+    "varv": "vgos",
+    "nlon": "lon",
+    "nlat": "lat",
+    "time_coverage_hours": 24,
+    "fmt": "%Y-%m-%dT%H:%M:%S.%fZ"
+}

@@ -30,14 +30,14 @@ multivar:
     output_arch: no_output
     broadcast_time: False
   uo:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/glorys_0m/glorys_uv_ageos_0m_2010-2018.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: uo
     input_arch: no_input
     output_arch: full_output
     broadcast_time: False
   vo:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/glorys_0m/glorys_uv_ageos_0m_2010-2018.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: vo
     input_arch: no_input
@@ -82,7 +82,7 @@ trainer:
     save_dir: ${hydra:runtime.output_dir}
     name: ${hydra:runtime.choices.xp}
     version: ''
-  max_epochs: 350
+  max_epochs: 250
   limit_train_batches: 102
   callbacks:
     - _target_: src.versioning_cb.VersioningCallback
@@ -91,6 +91,7 @@ trainer:
       monitor: val_total_mse
       save_top_k: 3
       filename: '{val_total_mse:.5f}-{epoch:03d}'
+      #every_n_epochs: 50
 
 datamodule:
   _target_: contrib.multivar.multivar_data.MultivarDataModule
@@ -107,10 +108,10 @@ datamodule:
     test: 
       time: {_target_: builtins.slice,  _args_: ['2018-01-01', '2018-12-31']}
   xrds_kw:
-    patch_dims: { time: 7, lat: 680, lon: 1440}
+    patch_dims: { time: 11, lat: 680, lon: 1440}
     strides: { time: 1, lat: 672, lon: 1432}
     domain_limits: ${domain.train}
-  dl_kw: {batch_size: 1, num_workers: 2}
+  dl_kw: {batch_size: 1, num_workers: 8}
 
 model:
   _target_: contrib.multivar.multivar_models_unet.MultivarUNet
