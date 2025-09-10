@@ -7,11 +7,15 @@ import torch
 import time
 from dask.diagnostics.progress import ProgressBar
 
+#from pathlib import Path
+
+
 class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
-    def __init__(self, *args, aug_dims=None, aug_dims_noise=None, **kwargs):
+    def __init__(self, *args, aug_dims=None, aug_dims_noise=None, aug_dims_offset=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.aug_dims = aug_dims
         self.aug_dims_noise = aug_dims_noise
+        self.aug_dims_offset = aug_dims_offset
         self._rng = np.random.default_rng()
 
         if self.aug_dims is not None:
@@ -19,7 +23,7 @@ class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
     
     def apply_augmentation(self, item, sl):
 
-        if self.aug_dims is None and self.aug_dims_noise is None:
+        if self.aug_dims is None and self.aug_dims_noise is None and self.aug_dims_offset is None:
             return item
         
         #print("Apply_augmentation")
@@ -36,8 +40,6 @@ class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
             for (aug_noise_idx, aug_noise_value) in self.aug_dims_noise:
                 noise = self._rng.uniform(-aug_noise_value, aug_noise_value, item.values[aug_noise_idx].shape).astype(np.float32)
                 item.values[aug_noise_idx] = item.values[aug_noise_idx] + noise
-
-        return item
 
     def get_coords_leadtime(self):
         self.return_coords = True
@@ -102,15 +104,17 @@ class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
 
 class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
 
-    def __init__(self, multivar_da, domains, xrds_kw, dl_kw, norm_stats=None, aug_dims=None, aug_dims_noise=None, **kwargs):
+    def __init__(self, multivar_da, domains, xrds_kw, dl_kw, norm_stats=None, aug_dims=None, aug_dims_noise=None, aug_dims_offset=None, **kwargs):
         self.input_da, self.multivar_information = multivar_da
+        #print(self.input_da.sel(variable="u_drifter").mean(skipna=True).values.item())
         self.aug_dims = aug_dims
         self.aug_dims_noise = aug_dims_noise
+        self.aug_dims_offset=aug_dims_offset
         self._norm_stats = norm_stats
         super().__init__(self.input_da, domains, xrds_kw, dl_kw, norm_stats=norm_stats, **kwargs)
         self.multivar_info()
 
-
+    # Modified by TP to add norm stat defined option
     def norm_stats(self):
         if self._norm_stats is None:
             self._norm_stats = self.train_mean_std()
@@ -118,6 +122,17 @@ class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
         else:
             self._norm_stats = (np.array(self._norm_stats[0]),np.array(self._norm_stats[1]))
             print("Norm stats defined", self._norm_stats)
+
+        """
+        #save norm_stats
+        if self.logger:
+            print(f"Saving norm at : {Path(self.logger.log_dir)}")
+            with open(f"{Path(self.logger.log_dir)}"+'/norm_stats.pkl', 'wb') as f:
+                pickle.dump(self._norm_stats, f)
+        else:
+            print("No self.logger")
+        """
+        
         return self._norm_stats
     
     def placeholder_norm_stats(self):
@@ -133,13 +148,22 @@ class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
     def train_mean_std(self):
         m = []
         s = []
+
+        print("Computing mean and std of training dataset ...")
+        
+        #print(self.domains['train'])
+
         data = self.input_da.sel(self.xrds_kw.get('domain_limits', {})).sel(self.domains['train'])
+
+        #print(data)
 
         for var, var_information in self.multivar_information.items():
             if var.startswith('masked_'):
                 m_var, s_var = data.sel(variable=var.split('masked_')[1]).pipe(lambda da: (da.mean().values.item(), da.std().values.item()))
             else:
-                m_var, s_var = data.sel(variable=var).pipe(lambda da: (da.mean().values.item(), da.std().values.item()))
+                #TP modif nanmean
+                m_var, s_var = data.sel(variable=var).pipe(lambda da: (da.mean(skipna=True).values.item(), da.std(skipna=True).values.item()))
+
             m.append(m_var)
             s.append(s_var)
         return np.array(m), np.array(s)
@@ -155,15 +179,16 @@ class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
 
     def setup(self, stage='test'):
         # calling MovingPatch Datasets, rand=True for train only
+
         post_fn = self.post_fn()
         self.train_ds = MultivarXrDataset(
-            self.input_da.sel(self.domains['train']), **self.xrds_kw, aug_dims=self.aug_dims,aug_dims_noise=self.aug_dims_noise, postpro_fn=post_fn, rand=True
+            self.input_da.sel(self.domains['train']), **self.xrds_kw, aug_dims=self.aug_dims,aug_dims_noise=self.aug_dims_noise, aug_dims_offset=self.aug_dims_offset, postpro_fn=post_fn, rand=True
         )
         self.val_ds = MultivarXrDataset(
-            self.input_da.sel(self.domains['val']), **self.xrds_kw, postpro_fn=post_fn, rand=False
+            self.input_da.sel(self.domains['val']), **self.xrds_kw, postpro_fn=post_fn, rand=False, aug_dims_offset=self.aug_dims_offset
         )
         self.test_ds = MultivarXrDataset(
-            self.input_da.sel(self.domains['test']), **self.xrds_kw, postpro_fn=post_fn, rand=False
+            self.input_da.sel(self.domains['test']), **self.xrds_kw, postpro_fn=post_fn, rand=False, aug_dims_offset=self.aug_dims_offset
         )
 
     def multivar_info(self):
@@ -224,12 +249,12 @@ class MultivarNfNDataModule(MultivarDataModule):
         # calling MovingPatch Datasets, rand=True for train only
         post_fn = self.post_fn()
         self.train_ds = MultivarNfNXrDataset(
-            self.input_da.sel(self.domains['train']), **self.xrds_kw, aug_dims=self.aug_dims, aug_dims_noise=self.aug_dims_noise, postpro_fn=post_fn, rand=True
+            self.input_da.sel(self.domains['train']), **self.xrds_kw, aug_dims=self.aug_dims, aug_dims_noise=self.aug_dims_noise, aug_dims_offset=self.aug_dims_offset, postpro_fn=post_fn, rand=True
         )
         self.val_ds = MultivarNfNXrDataset(
-            self.input_da.sel(self.domains['val']), **self.xrds_kw, postpro_fn=post_fn, rand=False
+            self.input_da.sel(self.domains['val']), **self.xrds_kw, postpro_fn=post_fn, rand=False, aug_dims_offset=self.aug_dims_offset
         )
         self.test_ds = MultivarNfNXrDataset(
-            self.input_da.sel(self.domains['test']), **self.xrds_kw, postpro_fn=post_fn, rand=False
+            self.input_da.sel(self.domains['test']), **self.xrds_kw, postpro_fn=post_fn, rand=False, aug_dims_offset=self.aug_dims_offset
         )
             

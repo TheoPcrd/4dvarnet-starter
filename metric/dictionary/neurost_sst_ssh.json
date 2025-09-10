@@ -1,9 +1,9 @@
 {
     "data_type": "neurost_sst_ssh",
     "label": "neurost_sst_ssh",
-    "path": "/Odyssey/private/t22picar/multivar_uv/rec/neurost_sst_ssh",
-    "pattern": "test_data_filtred",
-    "match": "test_data_filtred_(\\d{4})-(\\d{2})-(\\d{2}).nc",
+    "path": "/Odyssey/private/t22picar/multivar_uv/rec/neurost_sst_ssh/daily/",
+    "pattern": "unet_rec",
+    "match": "unet_rec_(\\d{4})-(\\d{2})-(\\d{2}).nc",
     "varu": "ugos",
     "varv": "vgos",
     "nlon": "lon",

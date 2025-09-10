@@ -7,37 +7,72 @@ import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import pickle
 
-import sys
-sys.path.append("/Odyssey/private/t22picar/4Dvarnet_uv/4dvarnet-starter/contrib/multivar/")
+#import sys
+#sys.path.append("/Odyssey/private/t22picar/4Dvarnet_uv/4dvarnet-starter/contrib/multivar/")
 from contrib.multivar.parts import StandardBlock, ResBlock, Down, Up, OutConv
 
 import kornia.filters as kfilts
 
-class MultivarUNet(Multivar4dVarNet):
 
-    def multivar_step_theo(self, batch, phase=""):
+class MultivarUNet(Multivar4dVarNet):
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.premiere_train = True  # Flag pour le premier step
+        #print(self.logger)
+        #print(self.solver)
+        #print(self.trainer.log_dir)
+        #self.save_norm_stat()
+
+    def save_norm_stat(self):
+        if self.logger:
+            print(f"Saving norm at : {Path(self.logger.log_dir)}")
+            print(self.norm_stats())
+            with open(f"{Path(self.logger.log_dir)}"+'/norm_stats.pkl', 'wb') as f:
+                pickle.dump(self._norm_stats, f)
+        else:
+            print("No self.logger")
+
+    def multivar_step_mask(self, batch, phase=""):
+
         out = self(batch=batch)
         output_var_names = self.multivar_selector.multivar_output_var_names()
         size_t = out.size(1) // len(output_var_names)
 
         out = out.view(out.size(0), len(output_var_names), size_t, out.size(2), out.size(3))
 
+        #print(out.shape)
+        #print(self.multivar_selector.multivar_full_output(batch).shape)
+
         loss = None
         total_mse = None
 
+        """
         if phase=="val":
-                loss_i = self.weighted_mse(out[:,i] - self.multivar_selector.multivar_obs_input(batch).view_as(out)[:,i], self.rec_weight[:out.size(2)])
-            #
-        else:     
             for i, var in enumerate(output_var_names):
-                loss_i = self.weighted_mse(out[:,i] - self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i], self.rec_weight[:out.size(2)])
-                with torch.no_grad():
-                    mse_i = 10000 * loss_i * self.output_norm_stats[1][i]**2
-                    self.log(f"{phase}_{var}_mse", mse_i, prog_bar=True, on_step=False, on_epoch=True)
-                    self.log(f"{phase}_{var}_loss", loss_i, prog_bar=True, on_step=False, on_epoch=True)
-                loss = loss_i if loss is None else loss + loss_i
-                total_mse = mse_i if total_mse is None else total_mse + mse_i
+                #TP : add mask nan
+                #mask = ~torch.isnan(self.multivar_selector.multivar_obs_input(batch).view_as(out)[:,i])
+                mask = (self.multivar_selector.multivar_obs_input(batch).view_as(out)[:,i] != 0).float() # 1 si != de 0 
+                loss_i = self.weighted_mse((out[:,i] - self.multivar_selector.multivar_obs_input(batch).view_as(out)[:,i])*mask, self.rec_weight[:out.size(2)])
+            #
+
+        else:    
+        """ 
+        for i, var in enumerate(output_var_names):
+            #TP : add mask nan
+            #mask = ~torch.isnan(self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i])
+            # A changer
+            mask = (self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i] != self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i][0][0][0]).float() # 1 si != de 0 
+            #print(torch.sum(mask))
+
+            loss_i = self.weighted_mse((out[:,i] - self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i])*mask, self.rec_weight[:out.size(2)])
+            with torch.no_grad():
+                mse_i = 10000 * loss_i * self.output_norm_stats[1][i]**2
+                self.log(f"{phase}_{var}_mse", mse_i, prog_bar=True, on_step=False, on_epoch=True)
+                self.log(f"{phase}_{var}_loss", loss_i, prog_bar=True, on_step=False, on_epoch=True)
+            loss = loss_i if loss is None else loss + loss_i
+            total_mse = mse_i if total_mse is None else total_mse + mse_i
 
         with torch.no_grad():
             self.log(f"{phase}_total_mse", total_mse, prog_bar=True, on_step=False, on_epoch=True)
@@ -46,11 +81,18 @@ class MultivarUNet(Multivar4dVarNet):
 
     def step(self, batch, phase=""):
 
+        #if self.premiere_train:
+        #    print("C'est le premier validation step !")
+        #    self.save_norm_stat()
+        #    self.premiere_train=False
+
+        
         # SKIP BATCH TO IMPLEMENT #
         if self.skip_batch(batch):
             return None, None
 
-        training_loss, out = self.multivar_step(batch, phase)
+        #training_loss, out = self.multivar_step(batch, phase)
+        training_loss, out = self.multivar_step_mask(batch, phase)
 
         return training_loss, out
     

@@ -146,9 +146,11 @@ def open_var_dataset(var_path, var, var_name, domain, drop_depth, fill_nan=None,
             mask_list = pickle.load(masks_file)
         mask_list = np.array(mask_list)
 
+        #print("MASKING input data")
         var_dataset= var_dataset.assign({
             mask_var:xr.apply_ufunc(mask_input, var_dataset[var], input_core_dims=[['lat', 'lon']], output_core_dims=[['lat', 'lon']], kwargs={"mask_list": mask_list}, dask="allowed", vectorize=True)
             })
+        #print("MASKING done")
         var_dataset = xr.Dataset({mask_var: var_dataset[mask_var]})
         return var_dataset
 
@@ -164,7 +166,8 @@ def merge_datasets(original_dataset: xr.Dataset, new_dataset: xr.Dataset, broadc
 
         new_dataset = new_dataset.reindex({'lat': original_dataset.lat, 'lon': original_dataset.lon}, method='nearest')
         new_dataset = new_dataset.expand_dims({'time': time_coords}, axis=0).broadcast_like(original_dataset)
-
+  
+    # TP : I think .assign interpolate if not the same grid ?! Can lead to issues be carefull
     merged_dataset = original_dataset.assign({var_name:var_data for var_name, var_data in new_dataset.data_vars.items()})
     return merged_dataset
 
@@ -174,6 +177,7 @@ def open_multivar_datasets(vars_info,
                            full_time_domain,
                            drop_depth=True):
 
+    #print(domain)
     # works only if train, val and test slices are in chronological order
     domain['time'] = slice(full_time_domain['train']['time'].start, full_time_domain['test']['time'].stop)
 
@@ -214,6 +218,7 @@ def open_multivar_datasets(vars_info,
         var_dataset = open_var_dataset(var_path, var, var_info.var_name, domain, drop_depth, fill_nan=fill_nan)
         full_dataset = merge_datasets(full_dataset, var_dataset, broadcast_time=broadcast_time)
         multivar_information[var] = var_information_dict
+
 
 
     full_dataset = (

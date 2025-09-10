@@ -118,11 +118,16 @@ ds_maps = xr.merge([res_uo, res_vo])
 
 #ds_maps.to_netcdf(f"rec/{path_file}/test_data.nc")
 
-### FILTER ####
-mask = np.load('/Odyssey/private/t22picar/2023a_SSH_mapping_OSE/nb_diags_THEO/uv_score_mask/mask_glorys_4th.npy')
-mask = mask[np.newaxis,:,:]
-mask = mask.repeat(365,axis=0)
-ds_maps = ds_maps.where(mask, np.nan)
+
+ ### FILTER ####
+if ds_maps.lat.values.shape[0]==680:
+    print("Mask 4th")
+    mask = np.load('/Odyssey/private/t22picar/2023a_SSH_mapping_OSE/nb_diags_THEO/uv_score_mask/mask_glorys_4th.npy')
+    mask = mask[np.newaxis,:,:]
+    mask = mask.repeat(365,axis=0)
+    ds_maps = ds_maps.where(mask, np.nan)
+else:
+    print("No mask applied")
 
 
 import os

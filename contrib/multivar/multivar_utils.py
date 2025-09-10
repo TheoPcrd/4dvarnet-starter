@@ -20,6 +20,28 @@ def get_multivar_aug_dims_noise(multivar_dict):
 
     return aug_dims_noise
 
+'''
+def get_multivar_aug_dims_offset(multivar_dict):
+    aug_dims_offset = None
+    dim = 0
+
+    for var, var_info in multivar_dict.items():
+        if 'aug_offset' in var_info.keys():
+            print("aug_offset in var info")
+            if var_info.aug_offset:
+                if aug_dims_offset is None:
+                    aug_dims_offset = []
+    # THE AUGMENTATION WILL ALWAYS WORK ON THE NEXT DIMENSION ONLY
+                aug_dims_offset.append((dim,var_info['aug_offset']))
+                print(f"offset {var}")
+
+        if 'mask_path' in var_info.keys():
+            dim += 1
+        dim+=1
+
+    return aug_dims_offset
+'''
+
 def get_multivar_aug_dims(multivar_dict):
     aug_dims = None
     dim = 0

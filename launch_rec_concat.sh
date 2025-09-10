@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --partition=Odyssey                         # Partition name
-#SBATCH --gres=gpu:l40s:4  #gpu:a40:3  #gpu:h100:2  #                           # GPU request
+#SBATCH --gres=gpu:h100:1 #gpu:rtx8000:1 #gpu:a40:3 #gpu:rtx8000:3 #gpu:l40s:4  #gpu:a40:3  #gpu:h100:2  #                           # GPU request
 #SBATCH --job-name=rec_uv                        # Job name
 #SBATCH --cpus-per-gpu=12    # 12 CPUs for each GPU
 #SBATCH --output=log/job_%j.log # Standard output and error log (%j for jobid)
-#SBATCH --mem=480G
+#SBATCH --mem=180G
 
 export HOME=/Odyssey/private/t22picar/
 source "/Odyssey/private/t22picar/miniforge3/etc/profile.d/conda.sh"
@@ -25,11 +25,13 @@ srun python concat_rec_saving_filter.py "$xp_name" #
 
 #srun python concat_rec_saving_filter.py #--> Add a mask and correct saving with daily output
 
-conda activate woc_env
+#conda activate woc_env
+conda activate bench_env
 
 srun python run_rmse.py "$xp_name" # --> Compute rmse score in rec/ 
 
+srun python run_spectrum.py "$xp_name" # 
 
+srun python run_lagrangian.py "$xp_name" # 
 
-
-
+srun python plot_lagrangian_and_spectrum_15m.py "$xp_name" # 

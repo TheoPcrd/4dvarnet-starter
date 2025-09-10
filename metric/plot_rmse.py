@@ -61,6 +61,7 @@ def plot_rmse_score_15m(list_xp_name):
 
     print("Agulhas result")
     display(utils.DictTable(list_dict))
+    
 
     list_dict = [#{'type_stat':'Mean','path':dir_eulerian+'eulerian_rms_GulfStream_008_047_15/Eulerian_RMS_008_047.pyo','name':'GlobCurrent Geostrophic'},
                 {'type_stat':'Mean','path':dir_eulerian+'eulerian_rms_GulfStream_cmems_015_004_15/Eulerian_RMS_015_004.pyo','name':'GlobCurrent Total'}, 

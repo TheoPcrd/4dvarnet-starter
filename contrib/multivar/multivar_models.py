@@ -31,6 +31,8 @@ class Multivar4dVarNet(Lit4dVarNet):
         loss = F.mse_loss(err_w[err_num], torch.zeros_like(err_w[err_num]))
         return loss
     
+    
+    
     @property
     def norm_stats(self):
         if self._norm_stats is not None:

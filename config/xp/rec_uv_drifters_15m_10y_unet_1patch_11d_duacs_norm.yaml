@@ -2,33 +2,49 @@
 
 multivar:
   ssh:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th_drifter.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: zos
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   sst:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2019_4th_drifter.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: thetao
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
-  uo:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+  u10:
+    var_path: /Odyssey/private/t22picar/data/era5/era5_2019_dailymean_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
-    var_name: uo
+    var_name: u10
+    input_arch: prior_input
+    output_arch: no_output
+    broadcast_time: False
+  v10:
+    var_path: /Odyssey/private/t22picar/data/era5/era5_2019_dailymean_4th.nc
+    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+    var_name: v10
+    input_arch: prior_input
+    output_arch: no_output
+    broadcast_time: False
+  u_drifter:
+    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_cmems_15m_4th.nc
+    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+    var_name: u_drifter
     input_arch: no_input
     output_arch: full_output
     broadcast_time: False
-  vo:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
+    fill_nan: 0
+  v_drifter:
+    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_cmems_15m_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
-    var_name: vo
+    var_name: v_drifter
     input_arch: no_input
     output_arch: full_output
     broadcast_time: False
+    fill_nan: 0
 
 multivar_selector:
   _target_: contrib.multivar.multivar_utils.MultivarBatchSelector
@@ -87,16 +103,25 @@ datamodule:
     full_time_domain: ${datamodule.domains}
   domains:
     train:
-      time: {_target_: builtins.slice, _args_: ['2010-01-01', '2017-12-31']}
+      time: {_target_: builtins.slice, _args_: ['2019-01-01', '2019-01-01']}
     val: 
-      time: {_target_: builtins.slice, _args_: ['2018-01-01', '2018-12-31']}
+      time: {_target_: builtins.slice, _args_: ['2019-01-01', '2019-02-01']}
     test: 
-      time: {_target_: builtins.slice,  _args_: ['2018-01-01', '2018-12-31']}
+      time: {_target_: builtins.slice,  _args_: ['2019-12-01', '2019-12-01']}
   xrds_kw:
     patch_dims: { time: 11, lat: 680, lon: 1440}
     strides: { time: 1, lat: 672, lon: 1432}
     domain_limits: ${domain.train}
   dl_kw: {batch_size: 1, num_workers: 8}
+#norm cmems
+  norm_stats: [[2.63709992e-01, 2.87051208e+02, 1.49229169e-02, 1.72671750e-01,
+       3.61934945e-05, 9.57501652e-06],[1.85697228e-01, 3.32014694e+01, 1.59422636e+00, 1.30654621e+00,
+       1.23104062e-02, 9.91316233e-03]]
+ 
+#norm aoml
+##  norm_stats: [[2.63710022e-01, 2.87051208e+02, 1.49229169e-02, 1.72671750e-01,
+#       2.38045741e-05, 8.17787350e-06],[1.85697228e-01, 3.32014694e+01, 1.59422636e+00, 1.30654621e+00,
+#       9.68556479e-03, 7.95241911e-03]]
 
 model:
   _target_: contrib.multivar.multivar_models_unet.MultivarUNet
@@ -161,10 +186,11 @@ model:
     #  _target_: contrib.multivar.multivar_models.MultivarBaseObsCost
     #  multivar_selector: ${multivar_selector}
 
+
   pre_metric_fn:
         _target_: xarray.Dataset.sel
         _partial_: True
-        time: {_target_: builtins.slice, _args_: ["2021-03-14", "2021-04-20"]}
+        time: {_target_: builtins.slice, _args_: ["2019-12-01", "2019-12-31"]}
         lat: ${domain.test.lat}
         lon: ${domain.test.lon}
 
