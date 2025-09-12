@@ -11,7 +11,7 @@ specs:
 
   # time on which the model will compute the normalisation stats (mean,std)
   min_time_std: 2019-01-01
-  max_time_std: 2019-12-31
+  max_time_std: 2019-01-01
 
   time_day_crop: 0
 

@@ -2,7 +2,7 @@
 
 multivar:
   ssh:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/NeurOST_SSH-SST_allsat-al_2019_4th.nc
+    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2019_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: zos
     input_arch: prior_input
@@ -16,28 +16,43 @@ multivar:
     output_arch: no_output
     broadcast_time: False
   u10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_2019_dailymean_4th.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_dailymean_4th_2010-01-01_2020-01-01.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: u10
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   v10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_2019_dailymean_4th.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_dailymean_4th_2010-01-01_2020-01-01.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: v10
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
-  uo:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_15.81m_2019-01-01-2020-01-01_4th.nc
+  latitude_var:
+    var_path: /Odyssey/private/t22picar/data/glorys_0m/glorys_multivar_0m_2010-2018.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+    var_name: lat
+    input_arch: prior_input
+    output_arch: no_output
+    broadcast_time: True
+  longitude_var:
+    var_path: /Odyssey/private/t22picar/data/glorys_0m/glorys_multivar_0m_2010-2018.nc
+    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+    var_name: lon
+    input_arch: prior_input
+    output_arch: no_output
+    broadcast_time: True
+  uo:
+    #var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_15.81m_2019-01-01-2020-01-01_4th.nc
+    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
     var_name: uo
     input_arch: no_input
     output_arch: full_output
     broadcast_time: False
   vo:
-    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_15.81m_2019-01-01-2020-01-01_4th.nc
+    #var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_15.81m_2019-01-01-2020-01-01_4th.nc
+    var_path: /Odyssey/private/t22picar/data/glorys_15m/glorys_multivar_15m_2010-2018.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: vo
     input_arch: no_input
@@ -107,10 +122,13 @@ datamodule:
     test: 
       time: {_target_: builtins.slice,  _args_: ['2019-12-01', '2019-12-01']}
   xrds_kw:
-    patch_dims: { time: 7, lat: 680, lon: 1440}
+    patch_dims: { time: 11, lat: 680, lon: 1440}
     strides: { time: 1, lat: 672, lon: 1432}
     domain_limits: ${domain.train}
   dl_kw: {batch_size: 1, num_workers: 8}
+  norm_stats: [[-1.57373890e-01,  1.40096645e+01,  1.49229169e-02,  1.72671750e-01,
+        5.00000048e+00, -4.16660197e-02,  2.98356451e-03,  3.23973410e-03],[ 0.18430939,  3.00513816,  1.59422636,  1.30654621,  6.93073177,
+       13.86146355,  0.10032155,  0.08177564]]
 
 model:
   _target_: contrib.multivar.multivar_models_unet.MultivarUNet
@@ -124,7 +142,7 @@ model:
   rec_weight:
       _target_: contrib.multivar.multivar_utils.get_multivar_mapping_wei
       patch_dims: ${datamodule.xrds_kw.patch_dims}
-      crop: {time: 0, lat: 4, lon: 4}
+      crop: {time: 0, lat: 0, lon: 0}
       dims_out:
         _target_: contrib.multivar.multivar_utils.get_multivar_prior_dims_out
         multivar_dict: ${multivar}

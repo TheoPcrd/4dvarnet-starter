@@ -1,6 +1,9 @@
 # @package _global_
 
-xp_name: unet_15m_cmems_driftune #ssh_duacs_sst_w_to_u_v_11d_15m_psi #drifters_ssh_duacs_sst_w_to_u_v_11d_15m # name of your experience (will create folders using this name)
+xp_name: ssh_duacs_sst_w_to_u_v_11d_15m_lat
+
+#xp_name: unet_uv_drifters_cmems_15m_10y_7d_ugos #ssh_duacs_sst_w_to_u_v_11d_15m_lat  #ssh_duacs_sst_w_to_u_v_11d_15m_psi #drifters_ssh_duacs_sst_w_to_u_v_11d_15m # name of your experience (will create folders using this name)
+
 #data_name: 2019_global_4
 data_name: 2019_global_4
 
@@ -9,9 +12,15 @@ paths:
   rec_path: /Odyssey/private/t22picar/multivar_uv/rec/ # your reconstruction will be stored in <rec_path>/<xp_name>/<data_name>/
   metrics_path: /Odyssey/private/t22picar/multivar_uv/metrics/
 
-  model_config_path: /Odyssey/private/t22picar/multivar_uv/config/xp/rec_uv_drifters_cmems_15m_10y_11d_tuning_norm.yaml #/Odyssey/private/t22picar/multivar_uv/config/xp/rec_uv_drifters_15m_10y_unet_1patch_11d_duacs_norm.yaml
-  model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/unet_uv_drifters_cmems_15m_10y_11d_tuning_norm/unet_uv_drifters_cmems_15m_10y_11d_tuning_norm/checkpoints/val_total_mse=0.39461-epoch=022.ckpt #/Odyssey/private/t22picar/multivar_uv/outputs/saved/multivar_uv_drifters_15m_10y_unet_1patch_11d/multivar_uv_drifters_15m_10y_unet_1patch_11d/checkpoints/val_total_mse=0.40992-epoch=086.ckpt # when copying from the terminal, be careful to remove the two '\' in 'mse\=...' and 'epoch\=...'
-  #model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/10-04-46/base_rec_global_multivar_uv_glorys_15m_10y_unet_1patch_11d/checkpoints/val_total_mse=7.73697-epoch=338.ckpt # when copying from the terminal, be careful to remove the two '\' in 'mse\=...' and 'epoch\=...'
+
+  model_config_path: /Odyssey/private/t22picar/multivar_uv/config/xp/base_rec_global_multivar_uv_glorys_wind_11d_duacs_lat.yaml
+  model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/unet_uv_glorys_15m_10y_wind_11d_lat/unet_uv_glorys_15m_10y_wind_11d_lat/checkpoints/val_total_mse=7.35257-epoch=339.ckpt
+  
+  #model_config_path: /Odyssey/private/t22picar/multivar_uv/config/xp/unet_uv_drifters_cmems_15m_10y_7d_ugos.yaml #/Odyssey/private/t22picar/multivar_uv/config/xp/rec_uv_drifters_15m_10y_unet_1patch_11d_duacs_norm.yaml
+  #model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/unet_uv_drifters_cmems_15m_10y_7d_ugos/unet_uv_drifters_cmems_15m_10y_7d_ugos/checkpoints/val_total_mse=0.40374-epoch=067.ckpt 
+
+  #model_config_path: /Odyssey/private/t22picar/multivar_uv/config/xp/unet_uv_drifters_cmems_15m_10y_21d_ugos.yaml #/Odyssey/private/t22picar/multivar_uv/config/xp/rec_uv_drifters_15m_10y_unet_1patch_11d_duacs_norm.yaml
+  #model_ckpt_path: /Odyssey/private/t22picar/multivar_uv/outputs/saved/unet_uv_drifters_cmems_15m_10y_21d_ugos/unet_uv_drifters_cmems_15m_10y_21d_ugos/checkpoints/val_total_mse=0.41837-epoch=043.ckpt
 
 specs:
   pixels_per_degree: 4
@@ -20,12 +29,9 @@ specs:
   min_time: 2019-01-01
   max_time: 2019-12-31
 
-  #min_time: 2019-01-01
-  #max_time: 2019-06-30
-
   # time on which the model will compute the normalisation stats (mean,std)
-  min_time_std: 2019-01-01
-  max_time_std: 2019-12-31
+  min_time_std: 2010-01-01
+  max_time_std: 2018-12-31
 
   time_day_crop: 0
 

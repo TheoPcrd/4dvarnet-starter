@@ -2,42 +2,42 @@
 
 multivar:
   ssh:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th_drifter.nc
+    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: zos
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   sst:
-    var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2010-01-01-2019-01-01_4th.nc
+    var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2010-01-01-2022-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: thetao
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   ugos:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th_drifter.nc
+    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: ugos
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   vgos:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th_drifter.nc
+    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: vgos
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   u10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_2010-2018_dailymean_4th.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_dailymean_4th_2010-01-01_2020-01-01.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: u10
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   v10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_2010-2018_dailymean_4th.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_dailymean_4th_2010-01-01_2020-01-01.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: v10
     input_arch: prior_input
@@ -123,7 +123,7 @@ datamodule:
       time: {_target_: builtins.slice, _args_: ['2018-01-01', '2018-12-31']}
       #time: {_target_: builtins.slice, _args_: ['2011-04-01', '2011-06-01']}
     test: 
-      time: {_target_: builtins.slice,  _args_: ['2018-12-31', '2018-12-31']}
+      time: {_target_: builtins.slice,  _args_: ['2019-01-01', '2019-12-31']}
       #time: {_target_: builtins.slice,  _args_: ['2011-06-01', '2011-06-01']}
   xrds_kw:
     patch_dims: { time: 7, lat: 680, lon: 1440}
@@ -150,15 +150,9 @@ model:
         channels_per_dim: ${datamodule.xrds_kw.patch_dims.time}
       offset: 1
 
-  #rec_weight_fn:
-  #  _target_: contrib.forecast_weights.forecast_weights_reconstruction_soft_edges
-  #  _partial_: True
-  #  soft_edge: 0.25
   solver:
     _target_: contrib.multivar.multivar_models_unet.UNet #MultivarGradSolverZero
-    #multivar_selector: ${multivar_selector}
-    #n_step: 0
-    #lr_grad: 1e3
+
     n_channels: 
       _target_: contrib.multivar.multivar_models_unet.get_multivar_only_prior_dims_in
       multivar_dict: ${multivar}
@@ -167,37 +161,11 @@ model:
       _target_: contrib.multivar.multivar_utils.get_multivar_prior_dims_out
       multivar_dict: ${multivar}
       channels_per_dim: ${datamodule.xrds_kw.patch_dims.time}
-    #grad_mod:
-    #  _target_: contrib.multivar.multivar_models_unet.AdamOpti
-    #  parameters: contrib.multivar.multivar_models_unet.UNet.parameters
-    #  dim_in: 
-    #    _target_: contrib.multivar.multivar_utils.get_multivar_grad_dims
-    #    multivar_dict: ${multivar}
-    #    channels_per_dim: ${datamodule.xrds_kw.patch_dims.time}
-    #  dim_hidden: 96
-    #prior_cost:
-    #  _target_: contrib.multivar.multivar_models.MultivarBilinAEPriorCost
-    #  multivar_selector: ${multivar_selector}
-    #  dim_in: 
-    #    _target_: contrib.multivar.multivar_utils.get_multivar_prior_dims_in
-    #    multivar_dict: ${multivar}
-    #    channels_per_dim: ${datamodule.xrds_kw.patch_dims.time}
-    #  dim_out: 
-    #    _target_: contrib.multivar.multivar_utils.get_multivar_prior_dims_out
-    #    multivar_dict: ${multivar}
-    #    channels_per_dim: ${datamodule.xrds_kw.patch_dims.time}
-    #  dim_hidden: 64
-    #  bilin_quad: False
-      # bilin_quad: True
-      #downsamp: 2
-    #obs_cost:
-    #  _target_: contrib.multivar.multivar_models.MultivarBaseObsCost
-    #  multivar_selector: ${multivar_selector}
 
   pre_metric_fn:
         _target_: xarray.Dataset.sel
         _partial_: True
-        time: {_target_: builtins.slice, _args_: ["2021-03-14", "2021-04-20"]}
+        time: {_target_: builtins.slice, _args_: ["2019-01-01", "2019-12-31"]}
         lat: ${domain.test.lat}
         lon: ${domain.test.lon}
 
