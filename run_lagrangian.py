@@ -12,7 +12,7 @@ import json
 # Récupération du xp_name 
 xp_name = sys.argv[1]
 print(xp_name)
-
+base_output="./"
 # Calcul des metrics 
 
 if "_0m" in xp_name:
@@ -25,13 +25,14 @@ elif "_15m" in xp_name:
     print(f"depth = {depth}")
 else: 
     print("!!! no depth in xp name !!!")
-    depth = 0
-    depth_ind=0
+    depth = 15
+    depth_ind=1
 # Formater depth avec deux chiffres significatifs
+
 depth_formatted = "{:02}".format(depth)
-input_dict = '/Odyssey/private/t22picar/multivar_uv/metric/dictionary/'
+input_dict = f'{base_output}metric/dictionary/'
 input_drifter = '/Odyssey/private/t22picar/2024_DC_WOC-ESA/dc_data/drifter/'
-outputdir = f'/Odyssey/private/t22picar/multivar_uv/rec/{xp_name}/metric'
+outputdir = f'{base_output}rec/{xp_name}/metric'
 
 path_dict_product = input_dict+f'{xp_name}.json' 
 
@@ -41,9 +42,8 @@ last_date  = datetime.datetime.strptime('20191231T000000Z', const.FMT)
 
 input_lagrangian_position = '/Odyssey/private/t22picar/2024_DC_WOC-ESA/dc_data/lagrangian_position_pickle/'
 
-
 region="Agulhas"
-outputdir = f'/Odyssey/private/t22picar/multivar_uv/rec/{xp_name}/metric/{region}/'
+outputdir = f'{base_output}rec/{xp_name}/metric/{region}/'
 path_dict_region = input_dict + f'region_{region}.json'
 region="T1"
 # Formater depth avec deux chiffres significatifs
@@ -63,11 +63,12 @@ path_artificial_drifters = os.path.join(outputdir,f'{xp_name}_region_{region}_de
 print(path_artificial_drifters)
 outputfilename = f'SDE_region_{region}_20190101-20191231'
 outputdir_plot=outputdir+'/plot/'
-#
+
 _ = sde.run(path_artificial_drifters, drifter_list, output_dir=outputdir_plot, output_filename=outputfilename,isplot=False)
 
+
 region="GulfStream"
-outputdir = f'/Odyssey/private/t22picar/multivar_uv/rec/{xp_name}/metric/{region}/'
+outputdir = f'{base_output}rec/{xp_name}/metric/{region}/'
 # Formater depth avec deux chiffres significatifs
 path_dict_region = input_dict + f'region_{region}.json'
 path_drifter_param = input_dict + 'drifters_parameters.ini'
@@ -89,7 +90,7 @@ _ = sde.run(path_artificial_drifters, drifter_list, output_dir=outputdir_plot, o
 
 
 region="Mediterranean"
-outputdir = f'/Odyssey/private/t22picar/multivar_uv/rec/{xp_name}/metric/{region}/'
+outputdir = f'{base_output}rec/{xp_name}/metric/{region}/'
 # Formater depth avec deux chiffres significatifs
 path_dict_region = input_dict + f'region_{region}.json'
 path_drifter_param = input_dict + 'drifters_parameters.ini'
@@ -107,4 +108,4 @@ path_artificial_drifters = os.path.join(outputdir, f'{xp_name}_region_{region}_d
 outputfilename = f'SDE_region_{region}_20190101-20191231'
 outputdir_plot=outputdir+'/plot/'
 #
-_ = sde.run(path_artificial_drifters, drifter_list, output_dir=outputdir_plot, output_filename=outputfilename,isplot=True)
+_ = sde.run(path_artificial_drifters, drifter_list, output_dir=outputdir_plot, output_filename=outputfilename,isplot=False)

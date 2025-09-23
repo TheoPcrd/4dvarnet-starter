@@ -31,6 +31,17 @@ class Multivar4dVarNet(Lit4dVarNet):
         loss = F.mse_loss(err_w[err_num], torch.zeros_like(err_w[err_num]))
         return loss
     
+        # Add by TP
+    @staticmethod
+    def weighted_mae(err, weight):
+        err_w = err * weight[None, ...]
+        non_zeros = (torch.ones_like(err) * weight[None, ...]) == 0.0
+        err_num = err.isfinite() & ~non_zeros
+        if err_num.sum() == 0:
+            print('ERROR HAS NO FINITE VALUES')
+            return torch.scalar_tensor(1000.0, device=err_num.device).requires_grad_()
+        loss = F.l1_loss(err_w[err_num], torch.zeros_like(err_w[err_num]))
+        return loss
     
     
     @property

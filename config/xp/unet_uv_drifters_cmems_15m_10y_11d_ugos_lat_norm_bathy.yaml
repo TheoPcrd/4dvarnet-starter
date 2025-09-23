@@ -66,7 +66,14 @@ multivar:
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: True
-    
+  bathy:
+    var_path: /Odyssey/private/t22picar/data/bathy/bathymetry_4th.nc
+    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+    var_name: deptho
+    input_arch: prior_input
+    output_arch: no_output
+    broadcast_time: True
+
 multivar_selector:
   _target_: contrib.multivar.multivar_utils.MultivarBatchSelector
 

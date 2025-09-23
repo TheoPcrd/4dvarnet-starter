@@ -134,10 +134,14 @@ def open_var_dataset(var_path, var, var_name, domain, drop_depth, fill_nan=None,
     for domain_var_key in list(domain.keys()):
         if domain_var_key not in var_dataset.dims:
             del domain[domain_var_key]
+
     var_dataset = var_dataset.sel(domain)
+    print(var_dataset[var])
 
     if fill_nan is not None:
+        print("filling nan ...")
         var_dataset = var_dataset.fillna(fill_nan)
+        print("filling nan done")
 
     if mask_path is not None:
         print('masking [{}] var'.format(var))
@@ -152,8 +156,9 @@ def open_var_dataset(var_path, var, var_name, domain, drop_depth, fill_nan=None,
             })
         #print("MASKING done")
         var_dataset = xr.Dataset({mask_var: var_dataset[mask_var]})
-        return var_dataset
 
+        return var_dataset
+    
     return var_dataset
 
 def merge_datasets(original_dataset: xr.Dataset, new_dataset: xr.Dataset, broadcast_time=False):
@@ -179,7 +184,13 @@ def open_multivar_datasets(vars_info,
 
     #print(domain)
     # works only if train, val and test slices are in chronological order
-    domain['time'] = slice(full_time_domain['train']['time'].start, full_time_domain['test']['time'].stop)
+    #Modified by TP in case val is later than test
+    
+    if full_time_domain['val']['time'].stop > full_time_domain['train']['time'].stop:
+        domain['time'] = slice(full_time_domain['train']['time'].start, full_time_domain['val']['time'].stop)
+    else: 
+        domain['time'] = slice(full_time_domain['train']['time'].start, full_time_domain['test']['time'].stop)
+    print(domain)
 
     input_variables = []
     tgt_variables = []
@@ -196,14 +207,15 @@ def open_multivar_datasets(vars_info,
             var_mask_path = var_info['mask_path']
         broadcast_time = var_info['broadcast_time']
         fill_nan = None
-        if 'fill_nan' in var_info:
-            fill_nan = var_info['fill_nan']
-
-
         # var_info_dict
         var_information_dict = dict()
         var_information_dict['input_arch'] = var_info.input_arch
         var_information_dict['output_arch'] = var_info.output_arch
+
+        if 'fill_nan' in var_info:
+            #print('fill_nan')
+            fill_nan = var_info['fill_nan']
+            var_information_dict['fill_nan']=var_info['fill_nan']
 
         if var_mask_path is not None:
             var_dataset = open_var_dataset(var_path, var, var_info.var_name, domain, drop_depth, fill_nan=fill_nan, mask_path=var_mask_path)
@@ -220,7 +232,6 @@ def open_multivar_datasets(vars_info,
         multivar_information[var] = var_information_dict
 
 
-
     full_dataset = (
         full_dataset
         .sel(domain)
@@ -229,6 +240,10 @@ def open_multivar_datasets(vars_info,
         .to_array()
     )
 
+    #print(full_dataset)
+    taille_go = full_dataset.nbytes / (1024 ** 3)
+    print(f"Taille du Dataset : {taille_go:.6f} Go")
+    
     print(full_dataset.var())
 
     return full_dataset, multivar_information

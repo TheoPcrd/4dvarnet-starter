@@ -158,17 +158,10 @@ class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
         #print(data)
 
         for var, var_information in self.multivar_information.items():
-            #print(var_information)
             if var.startswith('masked_'):
                 m_var, s_var = data.sel(variable=var.split('masked_')[1]).pipe(lambda da: (da.mean().values.item(), da.std().values.item()))
-                
-            #TP modif for nan
-            elif 'fill_nan' in var_information:
-                print("Remove fill nan during normalisation")
-                data_fill_nan = xr.where(data.sel(variable=var) == var_information["fill_nan"],np.nan,data.sel(variable=var))
-                #m_var, s_var = data.sel(variable=var).pipe(lambda da: (da.mean(skipna=True).values.item(), da.std(skipna=True).values.item()))
-                m_var, s_var = data_fill_nan.pipe(lambda da: (da.mean(skipna=True).values.item(), da.std(skipna=True).values.item()))
             else:
+                #TP modif nanmean
                 m_var, s_var = data.sel(variable=var).pipe(lambda da: (da.mean(skipna=True).values.item(), da.std(skipna=True).values.item()))
 
             m.append(m_var)

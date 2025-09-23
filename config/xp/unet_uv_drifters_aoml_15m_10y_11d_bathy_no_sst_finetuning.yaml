@@ -8,13 +8,13 @@ multivar:
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
-  sst:
-    var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2010-01-01-2022-01-01_4th.nc
-    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
-    var_name: thetao
-    input_arch: prior_input
-    output_arch: no_output
-    broadcast_time: False
+  #sst:
+  #  var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2010-01-01-2022-01-01_4th.nc
+  #  #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+  #  var_name: thetao
+  #  input_arch: prior_input
+  #  output_arch: no_output
+  #  broadcast_time: False
   ugos:
     var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
@@ -44,7 +44,7 @@ multivar:
     output_arch: no_output
     broadcast_time: False
   u_drifter:
-    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_cmems_15m_4th.nc
+    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_aoml_15m_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: u_drifter
     input_arch: no_input
@@ -52,7 +52,7 @@ multivar:
     broadcast_time: False
     fill_nan: 0
   v_drifter:
-    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_cmems_15m_4th.nc
+    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_aoml_15m_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: v_drifter
     input_arch: no_input
@@ -66,7 +66,14 @@ multivar:
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: True
-    
+  bathy:
+    var_path: /Odyssey/private/t22picar/data/bathy/bathymetry_4th.nc
+    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+    var_name: deptho
+    input_arch: prior_input
+    output_arch: no_output
+    broadcast_time: True
+
 multivar_selector:
   _target_: contrib.multivar.multivar_utils.MultivarBatchSelector
 
@@ -125,13 +132,13 @@ datamodule:
   domains:
     train:
       time: {_target_: builtins.slice, _args_: ['2010-01-01', '2017-12-31']}
-      #time: {_target_: builtins.slice, _args_: ['2011-01-01', '2011-04-01']}
+      #time: {_target_: builtins.slice, _args_: ['2011-01-01', '2011-02-01']}
     val: 
       time: {_target_: builtins.slice, _args_: ['2018-01-01', '2018-12-31']}
-      #time: {_target_: builtins.slice, _args_: ['2011-04-01', '2011-06-01']}
+      #time: {_target_: builtins.slice, _args_: ['2011-02-01', '2011-03-01']}
     test: 
       time: {_target_: builtins.slice,  _args_: ['2019-01-01', '2019-12-31']}
-      #time: {_target_: builtins.slice,  _args_: ['2011-06-01', '2011-06-01']}
+      #time: {_target_: builtins.slice,  _args_: ['2011-03-01', '2011-03-01']}
   xrds_kw:
     patch_dims: { time: 11, lat: 560, lon: 1440}
     strides: { time: 1, lat: 552, lon: 1432}

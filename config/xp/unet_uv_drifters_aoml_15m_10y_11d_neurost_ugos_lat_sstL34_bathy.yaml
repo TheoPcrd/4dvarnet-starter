@@ -2,28 +2,36 @@
 
 multivar:
   ssh:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
+    var_path: /Odyssey/public/NeurOST/NeurOST_2010-01-01_2020-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
-    var_name: zos
+    var_name: adt
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
-  sst:
+  sstL4:
     var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2010-01-01-2022-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: thetao
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
+  sstl3:
+    var_path: /Odyssey/private/t22picar/data/sst_L3/SST_L3_2010-01-01-2020-01-01_4th.nc
+    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+    var_name: thetao
+    input_arch: prior_input
+    output_arch: no_output
+    broadcast_time: False
+    fill_nan: 0
   ugos:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
+    var_path: /Odyssey/public/NeurOST/NeurOST_2010-01-01_2020-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: ugos
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   vgos:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
+    var_path: /Odyssey/public/NeurOST/NeurOST_2010-01-01_2020-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: vgos
     input_arch: prior_input
@@ -44,7 +52,7 @@ multivar:
     output_arch: no_output
     broadcast_time: False
   u_drifter:
-    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_cmems_15m_4th.nc
+    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_aoml_15m_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: u_drifter
     input_arch: no_input
@@ -52,7 +60,7 @@ multivar:
     broadcast_time: False
     fill_nan: 0
   v_drifter:
-    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_cmems_15m_4th.nc
+    var_path: /Odyssey/private/t22picar/data/drifters/daily_uv/drifters_uv_aoml_15m_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: v_drifter
     input_arch: no_input
@@ -66,7 +74,14 @@ multivar:
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: True
-    
+  bathy:
+    var_path: /Odyssey/private/t22picar/data/bathy/bathymetry_4th.nc
+    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+    var_name: deptho
+    input_arch: prior_input
+    output_arch: no_output
+    broadcast_time: True
+
 multivar_selector:
   _target_: contrib.multivar.multivar_utils.MultivarBatchSelector
 
@@ -183,7 +198,8 @@ entrypoints:
     trainer: ${trainer}
     lit_mod: ${model}
     dm: ${datamodule}
-
+    #ckpt: /Odyssey/private/t22picar/multivar_drifter/outputs/2025-09-18/11-49-25/unet_uv_drifters_aoml_15m_10y_11d_ugos_lat_sstL34_bathy/checkpoints/val_total_mse=0.24572-epoch=082.ckpt
+    #rec_only = True
 defaults:
   - _self_
 

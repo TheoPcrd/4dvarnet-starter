@@ -2,7 +2,7 @@ import torch
 torch.set_float32_matmul_precision('high')
 
 
-def base_training(trainer, dm, lit_mod, ckpt=None):
+def base_training(trainer, dm, lit_mod, ckpt=None,only_rec=False):
     if trainer.logger is not None:
         print()
         print("Logdir:", trainer.logger.log_dir)
@@ -16,9 +16,13 @@ def base_training(trainer, dm, lit_mod, ckpt=None):
 
     #trainer.fit(lit_mod, datamodule=dm, ckpt_path=ckpt)
     #trainer.test(lit_mod, datamodule=dm, ckpt_path=ckpt)
-
-    trainer.fit(lit_mod, datamodule=dm)
-    trainer.test(lit_mod, datamodule=dm, ckpt_path='best')
+    if only_rec:
+        print("ONLY RECONSTRUCTION")
+        print(ckpt)
+        trainer.test(lit_mod, datamodule=dm, ckpt_path=ckpt)
+    else:
+        trainer.fit(lit_mod, datamodule=dm)
+        trainer.test(lit_mod, datamodule=dm, ckpt_path='best')
 
 def multi_dm_training(trainer, dm, lit_mod, test_dm=None, test_fn=None, ckpt=None):
     if trainer.logger is not None:

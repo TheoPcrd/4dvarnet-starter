@@ -78,57 +78,32 @@ def save(ds: xr.Dataset, listkey: list, file_out: str,
     #ds.to_netcdf(file_out, 'w', format="NETCDF4", encoding=encoding)
     return ds,encoding
 
-#with hydra.initialize('config', version_base='1.3'):
-#    cfg = hydra.compose("main", overrides=[
-#        'xp=ose_pipeline_1y_global_4_multivar_15m_unet_1patch_test_L4'])
-#path_file=cfg.xp_name
-
 # Récupération du xp_name 
 path_file = sys.argv[1]
 print(path_file)
 
-tstart_1='2019-01-01'
-tend_1= '2019-06-30'
-
-tstart_2='2019-07-01'
-tend_2='2019-12-31'
-
-result_filepath = f"rec/{path_file}/2019_global_4/test_data_dim0.nc"
-res_uo_1 = xr.open_dataset(result_filepath)
-res_uo_1 = res_uo_1.sel(time=slice(tstart_1, tend_1))
-
-result_filepath = f"rec/{path_file}/2019_global_4_2/test_data_dim0.nc"
-res_uo_2 = xr.open_dataset(result_filepath)
-res_uo_2 = res_uo_2.sel(time=slice(tstart_2, tend_2))
-
-res_uo = xr.concat([res_uo_1, res_uo_2], dim='time')
+result_filepath = f"outputs/saved/{path_file}/{path_file}/test_data_dim0.nc"
+res_uo = xr.open_dataset(result_filepath)
 res_uo = res_uo.rename({'out': 'ugos'})
 
-result_filepath = f"rec/{path_file}/2019_global_4/test_data_dim1.nc"
-res_vo_1 = xr.open_dataset(result_filepath)
-res_vo_1 = res_vo_1.sel(time=slice(tstart_1, tend_1))
-
-result_filepath = f"rec/{path_file}/2019_global_4_2/test_data_dim1.nc"
-res_vo_2 = xr.open_dataset(result_filepath)
-res_vo_2 = res_vo_2.sel(time=slice(tstart_2, tend_2))
-
-res_vo = xr.concat([res_vo_1, res_vo_2], dim='time')
+result_filepath = f"outputs/saved/{path_file}/{path_file}/test_data_dim1.nc"
+res_vo = xr.open_dataset(result_filepath)
 res_vo = res_vo.rename({'out': 'vgos'})
+
 ds_maps = xr.merge([res_uo, res_vo])
 
-#ds_maps.to_netcdf(f"rec/{path_file}/test_data.nc")
+lat_ref=ds_maps.lat.values
+lon_ref=ds_maps.lon.values
 
-
+print(f"Domaine = [{lat_ref[0]},{lat_ref[-1]},{lon_ref[0]},{lon_ref[-1]}]")
  ### FILTER ####
-if ds_maps.lat.values.shape[0]==680:
-    print("Mask 4th")
-    mask = np.load('/Odyssey/private/t22picar/2023a_SSH_mapping_OSE/nb_diags_THEO/uv_score_mask/mask_glorys_4th.npy')
-    mask = mask[np.newaxis,:,:]
-    mask = mask.repeat(365,axis=0)
-    ds_maps = ds_maps.where(mask, np.nan)
-else:
-    print("No mask applied")
 
+file_grid = "/Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc"
+file_grid = xr.open_dataset(file_grid).isel(time=0).sel(lat=slice(lat_ref[0],lat_ref[-1])).sel(lon=slice(lon_ref[0],lon_ref[-1]))
+mask = np.where(np.isnan(file_grid.zos),False,True)
+mask = mask[np.newaxis,:,:]
+mask = mask.repeat(365,axis=0)
+ds_maps = ds_maps.where(mask, np.nan)
 
 import os
 # Chemin du dossier que vous souhaitez créer
@@ -157,26 +132,3 @@ while current_date < end_date:
     folder_out = dossier_path_daily+f"/unet_rec_{current_date.strftime('%Y-%m-%d')}.nc"
     ds_map_day.to_netcdf(folder_out, 'w', format="NETCDF4", encoding=encoding)
     current_date += timedelta(days=1)  # Passe au jour suivant
-
-
-
-"""
-import shutil
-# Vérifie si le fichier test_data.nc existe dans le dossier courant
-if os.path.isfile(f"rec/{path_file}/test_data.nc"):
-    # Vérifie si le dossier 2019_global_4 existe et le supprime
-    if os.path.isdir(f"rec/{path_file}/2019_global_4"):
-        shutil.rmtree(f"rec/{path_file}/2019_global_4")
-        print("Le dossier 2019_global_4 a été supprimé.")
-    else:
-        print("Le dossier 2019_global_4 n'existe pas.")
-
-    # Vérifie si le dossier 2019_global_4_2 existe et le supprime
-    if os.path.isdir(f"rec/{path_file}/2019_global_4_2"):
-        shutil.rmtree(f"rec/{path_file}/2019_global_4_2")
-        print("Le dossier 2019_global_4_2 a été supprimé.")
-    else:
-        print("Le dossier 2019_global_4_2 n'existe pas.")
-else:
-    print("Le fichier test_data.nc n'existe pas.")
-"""

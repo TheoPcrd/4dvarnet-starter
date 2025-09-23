@@ -74,7 +74,7 @@ def setup_model_config(
     OmegaConf.update(config, key='datamodule.domains.val.time._args_', value=[min_time, min_time_offseted])
     
     OmegaConf.update(config, key='datamodule.domains.test.time._args_', value=[min_time, max_time])
-
+    
     OmegaConf.update(config, key='model.pre_metric_fn.time._args_', value=[min_time_offseted, max_time_offseted])
 
     # LEADTIME OUTPUTS:
