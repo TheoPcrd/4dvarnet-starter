@@ -6,9 +6,24 @@ import functools as ft
 import torch
 import time
 from dask.diagnostics.progress import ProgressBar
+import psutil
+import os
 
 #from pathlib import Path
+"""
+class MultivarDaskXrDataset(MultivarXrDataset):
+    def __init__(self, da, domain_limits=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.da = self.collate_fn
+        da_dims = dict(zip(self.da.dims, self.da.shape))
+        self.da_dims = da_dims
 
+    # 3. Créer une fonction de collation pour charger les batches efficacement
+    def collate_fn(self,batch):
+        # batch est une liste de Dask Arrays
+        stacked = self.da.stack(batch, axis=0)  # Empile les chunks
+        return torch.from_numpy(stacked.compute())  # Un seul .compute() pour tout le batch
+"""
 
 class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
     def __init__(self, *args, aug_dims=None, aug_dims_noise=None, aug_dims_offset=None, **kwargs):
@@ -64,7 +79,10 @@ class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
         coords_slices = self.get_coords()
 
         coords_dims = self.patch_dims
-        
+
+        #print("coords_dims")
+        #print(coords_dims)
+
         new_dims = [f'v{i}' for i in range(len(items[0].cpu().shape) - len(coords_dims))]
         dims = new_dims + list(coords_dims)
 
@@ -102,9 +120,42 @@ class MultivarXrDataset(XrDatasetMovingPatchFastRecGPU):
         print('total reconstruction time: {:.3f}'.format(time.time() - start_time))
         return result_da
 
+
+    def reconstruct_from_items_theo(self, items):
+        """
+            Reconstruction of patches
+        """
+
+        coords_dims = self.patch_dims
+        time_crop = self.patch_dims['time']//2
+
+        new_dims = [f'v{i}' for i in range(1)]
+        dims = new_dims + list(coords_dims)
+
+        items = np.expand_dims(items, axis=0).astype(np.float32)
+
+        result_da = xr.DataArray(
+            items,
+            dims=list(dims),
+            coords={
+                    d: self.da[d][time_crop:-time_crop] if d == 'time' else self.da[d]
+                    for d in self.patch_dims
+                   },
+        )
+
+        print(result_da)
+
+
+        return result_da
+
 class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
 
     def __init__(self, multivar_da, domains, xrds_kw, dl_kw, norm_stats=None, aug_dims=None, aug_dims_noise=None, aug_dims_offset=None, **kwargs):
+        
+        print(f"init datamodule")
+        mem_used = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3  # en Go
+        print(f"RAM = {mem_used:.2f} Go")
+
         self.input_da, self.multivar_information = multivar_da
         #print(self.input_da.sel(variable="u_drifter").mean(skipna=True).values.item())
         self.aug_dims = aug_dims
@@ -150,12 +201,13 @@ class MultivarDataModule(MovingPatchDataModuleFastRecGPU):
         s = []
 
         print("Computing mean and std of training dataset ...")
-        
+
         #print(self.domains['train'])
 
         data = self.input_da.sel(self.xrds_kw.get('domain_limits', {})).sel(self.domains['train'])
 
-        #print(data)
+        mem_used = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3  # en Go
+        print(f"RAM = {mem_used:.2f} Go")
 
         for var, var_information in self.multivar_information.items():
             #print(var_information)

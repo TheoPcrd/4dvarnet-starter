@@ -42,37 +42,29 @@ class MultivarUNet_mae(Multivar4dVarNet):
 
         out = out.view(out.size(0), len(output_var_names), size_t, out.size(2), out.size(3))
 
-        #print(out.shape)
-        #print(self.multivar_selector.multivar_full_output(batch).shape)
-
         loss = None
         total_mse = None
 
-        """
-        if phase=="val":
-            for i, var in enumerate(output_var_names):
-                #TP : add mask nan
-                #mask = ~torch.isnan(self.multivar_selector.multivar_obs_input(batch).view_as(out)[:,i])
-                mask = (self.multivar_selector.multivar_obs_input(batch).view_as(out)[:,i] != 0).float() # 1 si != de 0 
-                loss_i = self.weighted_mse((out[:,i] - self.multivar_selector.multivar_obs_input(batch).view_as(out)[:,i])*mask, self.rec_weight[:out.size(2)])
-            #
-
-        else:    
-        """ 
         for i, var in enumerate(output_var_names):
             #TP : add mask nan
             #mask = ~torch.isnan(self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i])
+            
             # A changer
-            mask = (self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i] != self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i][0][0][0]).float() # 1 si != de 0 
+            #mask = (self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i] != self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i][0][0][0]).float() # 1 si != de 0 
             #print(torch.sum(mask))
 
-            loss_i = self.weighted_mae((out[:,i] - self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i])*mask, self.rec_weight[:out.size(2)])
+            loss_i = self.weighted_mae((out[:,i] - self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i]), self.rec_weight[:out.size(2)])
+            
             with torch.no_grad():
-                mse_i = 10000 * loss_i * self.output_norm_stats[1][i]**2
+                #mse_i = 10000 * loss_i * self.output_norm_stats[1][i]**2
+                mse_i = loss_i * self.output_norm_stats[1][i] #**2
                 self.log(f"{phase}_{var}_mse", mse_i, prog_bar=True, on_step=False, on_epoch=True)
                 self.log(f"{phase}_{var}_loss", loss_i, prog_bar=True, on_step=False, on_epoch=True)
             loss = loss_i if loss is None else loss + loss_i
             total_mse = mse_i if total_mse is None else total_mse + mse_i
+
+        #print("STEP")
+        #print(f"{phase}_total_mse")
 
         with torch.no_grad():
             self.log(f"{phase}_total_mse", total_mse, prog_bar=True, on_step=False, on_epoch=True)
@@ -88,8 +80,8 @@ class MultivarUNet_mae(Multivar4dVarNet):
 
         
         # SKIP BATCH TO IMPLEMENT #
-        if self.skip_batch(batch):
-            return None, None
+        #if self.skip_batch(batch):
+        #   return None, None
 
         #training_loss, out = self.multivar_step(batch, phase)
         training_loss, out = self.multivar_step_mask(batch, phase)

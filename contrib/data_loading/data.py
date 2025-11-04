@@ -2,6 +2,8 @@ import xarray as xr
 import numpy as np
 import pickle
 from src.data import TrainingItem
+import psutil
+import os
 
 def load_ose_data(path):
     ds = (
@@ -113,7 +115,7 @@ def open_glorys12_data(path, masks_path, domain, variables="zos", masking=True, 
 
     return ds
 
-def open_var_dataset(var_path, var, var_name, domain, drop_depth, fill_nan=None, mask_path=None):
+def open_var_dataset(var_path, var, var_name, domain, drop_depth, fill_nan=None, mask_path=None,sst_transfo=None):
     """
         open a single dataset for the multivar 4dvar
 
@@ -123,13 +125,20 @@ def open_var_dataset(var_path, var, var_name, domain, drop_depth, fill_nan=None,
         drop_depth: whether to drop the "depth" var
         mask_path: if not None, loads the .pickle file and masks the input data
     """
+    #print("domain")
+    #print(domain)
+
     var_dataset = xr.Dataset({var:xr.open_dataset(var_path)[var_name]})
 
     if 'depth' in var_dataset.dims and drop_depth:
         var_dataset = var_dataset.drop_dims('depth')
 
     if 'latitude' in list(var_dataset.dims):
-        var_dataset = var_dataset.rename({'latitude':'lat', 'longitude':'lon'})
+        #var_dataset = var_dataset.rename({'latitude':'lat', 'longitude':'lon'})
+        var_dataset = var_dataset.rename({'latitude':'lat'})
+        
+    if 'longitude' in list(var_dataset.dims):
+        var_dataset = var_dataset.rename({'longitude':'lon'})
 
     for domain_var_key in list(domain.keys()):
         if domain_var_key not in var_dataset.dims:
@@ -137,6 +146,15 @@ def open_var_dataset(var_path, var, var_name, domain, drop_depth, fill_nan=None,
 
     var_dataset = var_dataset.sel(domain)
     print(var_dataset[var])
+
+    if sst_transfo is not None:
+        print("Changing sst --> log |∇T| ")
+        du_dx = (np.abs(var_dataset.differentiate("lon")))
+        du_dy = (np.abs(var_dataset.differentiate("lat")))
+        epsilone=1e-10
+        var_dataset = np.log(du_dx + du_dy + epsilone)
+        del du_dx, du_dy, epsilone
+        print("Changing sst --> log |∇T| done")
 
     if fill_nan is not None:
         print("filling nan ...")
@@ -171,9 +189,10 @@ def merge_datasets(original_dataset: xr.Dataset, new_dataset: xr.Dataset, broadc
 
         new_dataset = new_dataset.reindex({'lat': original_dataset.lat, 'lon': original_dataset.lon}, method='nearest')
         new_dataset = new_dataset.expand_dims({'time': time_coords}, axis=0).broadcast_like(original_dataset)
-  
+
     # TP : I think .assign interpolate if not the same grid ?! Can lead to issues be carefull
     merged_dataset = original_dataset.assign({var_name:var_data for var_name, var_data in new_dataset.data_vars.items()})
+
     return merged_dataset
 
 # general function to load multiple varaibles from multiple datasets into 4DVarNet
@@ -186,7 +205,11 @@ def open_multivar_datasets(vars_info,
     # works only if train, val and test slices are in chronological order
     #Modified by TP in case val is later than test
     
-    if full_time_domain['val']['time'].stop > full_time_domain['train']['time'].stop:
+    print(f"init open_multivar_datasets")
+    mem_used = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3  # en Go
+    print(f"RAM = {mem_used:.2f} Go")
+
+    if full_time_domain['val']['time'].stop > full_time_domain['test']['time'].stop:
         domain['time'] = slice(full_time_domain['train']['time'].start, full_time_domain['val']['time'].stop)
     else: 
         domain['time'] = slice(full_time_domain['train']['time'].start, full_time_domain['test']['time'].stop)
@@ -207,6 +230,7 @@ def open_multivar_datasets(vars_info,
             var_mask_path = var_info['mask_path']
         broadcast_time = var_info['broadcast_time']
         fill_nan = None
+        sst_transfo=None
         # var_info_dict
         var_information_dict = dict()
         var_information_dict['input_arch'] = var_info.input_arch
@@ -216,6 +240,10 @@ def open_multivar_datasets(vars_info,
             #print('fill_nan')
             fill_nan = var_info['fill_nan']
             var_information_dict['fill_nan']=var_info['fill_nan']
+
+        if 'sst_transfo' in var_info:
+            #print('fill_nan')
+            sst_transfo = True
 
         if var_mask_path is not None:
             var_dataset = open_var_dataset(var_path, var, var_info.var_name, domain, drop_depth, fill_nan=fill_nan, mask_path=var_mask_path)
@@ -227,10 +255,14 @@ def open_multivar_datasets(vars_info,
             
             var_information_dict['input_arch'] = 'no_input'
 
-        var_dataset = open_var_dataset(var_path, var, var_info.var_name, domain, drop_depth, fill_nan=fill_nan)
+        print(f"for var open_multivar_datasets")
+        mem_used = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3  # en Go
+        print(f"RAM = {mem_used:.2f} Go")
+
+        var_dataset = open_var_dataset(var_path, var, var_info.var_name, domain, drop_depth, fill_nan=fill_nan,sst_transfo=sst_transfo)
         full_dataset = merge_datasets(full_dataset, var_dataset, broadcast_time=broadcast_time)
         multivar_information[var] = var_information_dict
-
+        del var_dataset
 
     full_dataset = (
         full_dataset
@@ -245,5 +277,9 @@ def open_multivar_datasets(vars_info,
     print(f"Taille du Dataset : {taille_go:.6f} Go")
     
     print(full_dataset.var())
+
+    print(f"end open_multivar_datasets")
+    mem_used = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3  # en Go
+    print(f"RAM = {mem_used:.2f} Go")
 
     return full_dataset, multivar_information

@@ -4,6 +4,7 @@ import sys
 import hydra
 from typing import Optional
 import datetime
+#Select day per day 
 
 
 ATTRS ={'time': {'dtype': 'int64',}, # 'units': 'days since 2019-01-01', }, 
@@ -78,16 +79,21 @@ def save(ds: xr.Dataset, listkey: list, file_out: str,
     #ds.to_netcdf(file_out, 'w', format="NETCDF4", encoding=encoding)
     return ds,encoding
 
+
+# Définir la date de début et la date de fin
+start_date = datetime.datetime(2019, 1, 1)
+end_date = datetime.datetime(2019, 12, 31)
+
 # Récupération du xp_name 
 path_file = sys.argv[1]
 print(path_file)
 
 result_filepath = f"outputs/saved/{path_file}/{path_file}/test_data_dim0.nc"
-res_uo = xr.open_dataset(result_filepath)
+res_uo = xr.open_dataset(result_filepath).sel(time=slice(start_date,end_date))
 res_uo = res_uo.rename({'out': 'ugos'})
 
 result_filepath = f"outputs/saved/{path_file}/{path_file}/test_data_dim1.nc"
-res_vo = xr.open_dataset(result_filepath)
+res_vo = xr.open_dataset(result_filepath).sel(time=slice(start_date,end_date))
 res_vo = res_vo.rename({'out': 'vgos'})
 
 ds_maps = xr.merge([res_uo, res_vo])
@@ -98,12 +104,22 @@ lon_ref=ds_maps.lon.values
 print(f"Domaine = [{lat_ref[0]},{lat_ref[-1]},{lon_ref[0]},{lon_ref[-1]}]")
  ### FILTER ####
 
-file_grid = "/Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc"
-file_grid = xr.open_dataset(file_grid).isel(time=0).sel(lat=slice(lat_ref[0],lat_ref[-1])).sel(lon=slice(lon_ref[0],lon_ref[-1]))
-mask = np.where(np.isnan(file_grid.zos),False,True)
-mask = mask[np.newaxis,:,:]
-mask = mask.repeat(365,axis=0)
-ds_maps = ds_maps.where(mask, np.nan)
+if "finescale" in path_file or "8th" in path_file: 
+    file_grid = "/Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01.nc"
+    file_grid = xr.open_dataset(file_grid).isel(time=0).sel(latitude=slice(lat_ref[0],lat_ref[-1])).sel(longitude=slice(lon_ref[0],lon_ref[-1]))
+    mask = np.where(np.isnan(file_grid.adt),False,True)
+    mask = mask[np.newaxis,:,:]
+    mask = mask.repeat(365,axis=0)
+    ds_maps = ds_maps.where(mask, np.nan)    
+
+else : 
+
+    file_grid = "/Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc"
+    file_grid = xr.open_dataset(file_grid).isel(time=0).sel(lat=slice(lat_ref[0],lat_ref[-1])).sel(lon=slice(lon_ref[0],lon_ref[-1]))
+    mask = np.where(np.isnan(file_grid.zos),False,True)
+    mask = mask[np.newaxis,:,:]
+    mask = mask.repeat(365,axis=0)
+    ds_maps = ds_maps.where(mask, np.nan)
 
 import os
 # Chemin du dossier que vous souhaitez créer
@@ -118,15 +134,11 @@ variables = [var for var in ds_maps.variables if var not in ds_maps.dims]
 ds_maps,encoding = save(ds_maps,variables,dossier_path_daily)
 
 
-#Select day per day 
 from datetime import datetime, timedelta
-# Définir la date de début et la date de fin
-start_date = datetime(2019, 1, 1)
-end_date = datetime(2020, 1, 1)
 
 # Boucle sur chaque jour de la période
 current_date = start_date
-while current_date < end_date:
+while current_date <= end_date:
     #print(current_date.strftime('%Y-%m-%d'))  # Affiche la date au format AAAA-MM-JJ
     ds_map_day=ds_maps.sel(time=current_date)
     folder_out = dossier_path_daily+f"/unet_rec_{current_date.strftime('%Y-%m-%d')}.nc"

@@ -5,6 +5,9 @@ import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import psutil
+import os
+import gc
 
 import kornia.filters as kfilts
 
@@ -35,8 +38,10 @@ class Multivar4dVarNet(Lit4dVarNet):
     @staticmethod
     def weighted_mae(err, weight):
         err_w = err * weight[None, ...]
+        #err_num = mask == 0
         non_zeros = (torch.ones_like(err) * weight[None, ...]) == 0.0
         err_num = err.isfinite() & ~non_zeros
+        #print(torch.sum(err_num).item())
         if err_num.sum() == 0:
             print('ERROR HAS NO FINITE VALUES')
             return torch.scalar_tensor(1000.0, device=err_num.device).requires_grad_()
@@ -72,10 +77,16 @@ class Multivar4dVarNet(Lit4dVarNet):
 
 
     def clear_gpu_mem(self):
+        print("clear_gpu_mem")
+
         del self.solver
+        #del self.multivar_selector
+
         torch.cuda.empty_cache()
+        #gc.collect()
 
     def skip_batch(self, batch):
+        #print(self.multivar_selector.multivar_full_output(batch).isfinite().float().mean())
         return self.multivar_selector.multivar_full_output(batch).isfinite().float().mean() < 0.1
 
     def step(self, batch, phase=""):
@@ -141,12 +152,17 @@ class Multivar4dVarNet(Lit4dVarNet):
                 out.squeeze(dim=-1).detach().cpu() * s + m,
             )
         
+        # Mesure après le traitement
+        mem_used = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3  # en Go
+        # Affichage
+        print(f"Batch {batch_idx}: RAM = {mem_used:.2f} Go")
+
     def on_test_epoch_end(self):
         self.clear_gpu_mem()
         print('TEST DATA SIZE: {}'.format(torch.cat(self.test_data).size()))
 
         n_output_dims = self.test_data[0].shape[1]
-
+        
         for output_dim in range(n_output_dims):
             rec_da = self.trainer.test_dataloaders.dataset.reconstruct_from_items(
                 torch.cat(self.test_data).index_select(dim=1, index=torch.Tensor([output_dim]).type(torch.int64)).cuda(),
@@ -165,6 +181,132 @@ class Multivar4dVarNet(Lit4dVarNet):
                 metric_n: metric_fn(metric_data)
                 for metric_n, metric_fn in self.metrics.items()
             })
+
+            print(metrics.to_frame(name="Metrics").to_markdown())
+            if self.logger:
+                test_data.to_netcdf(Path(self.logger.log_dir) / f'test_data_dim{output_dim}.nc')
+                print(Path(self.trainer.log_dir) / f'test_data_dim{output_dim}.nc')
+                self.logger.log_metrics(metrics.to_dict())
+
+    def test_step_theo(self, batch, batch_idx):
+
+        out = self(batch=batch)
+        m, s = self.output_norm_stats
+
+        n_vars = s.shape[0]
+        size_t = out.size(1) // n_vars
+        s = torch.tensor(s).view(1,n_vars,1,1,1)
+        m = torch.tensor(m).view(1,n_vars,1,1,1)
+        out = out.view(out.size(0), n_vars, size_t, out.size(2), out.size(3)).squeeze(dim=-1).detach().cpu()  * s + m
+
+        print("OUT SHAPE")
+        print(out.shape)
+        #print(out)
+
+        ##### Add by TP #####
+        n_output_dims = out.shape[1]
+
+        if batch_idx == 0:
+            #self.test_data = []
+            self.test_data = [[] for _ in range(n_output_dims)]
+        
+        # Vérifier cette ligne 
+        for output_dim in range(n_output_dims):
+
+            #print("Weight size")
+            #print(self.rec_weight.cpu().numpy()[:self.rec_weight.cpu().numpy().shape[0]//n_output_dims].shape)
+
+            #print("out size")
+            #print((torch.cat([out]).index_select(dim=1, index=torch.Tensor([output_dim]).type(torch.int64)).cuda()[0,0,:].shape))
+                
+            #print(self.rec_weight.cpu().numpy()[:self.rec_weight.cpu().numpy().shape[0]//n_output_dims][:,200,200])
+
+            rec_da_batch = torch.mean((torch.cat([out]).index_select(dim=1, index=torch.Tensor([output_dim]).type(torch.int64)).cuda()[0,0,:])*
+                self.rec_weight.cuda()[:self.rec_weight.cpu().numpy().shape[0]//n_output_dims],0)
+            
+            rec_da_batch= rec_da_batch.cpu().numpy()
+
+            #rec_da_batch = self.trainer.test_dataloaders.dataset.reconstruct_from_items(
+            #    torch.cat([out]).index_select(dim=1, index=torch.Tensor([output_dim]).type(torch.int64)).cuda(),
+            #    self.rec_weight.cpu().numpy()[:self.rec_weight.cpu().numpy().shape[0]//n_output_dims])
+
+            print("rec_da_batch size")
+            print(rec_da_batch.shape)
+            self.test_data[output_dim].append(rec_da_batch)
+
+            mem_used = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3  # en Go
+            print(f"RAM = {mem_used:.2f} Go")
+
+            #print("rec_da_batch_2 size")
+            #print(rec_da_batch_2.shape)
+
+        #self.test_data.append(rec_da_batch)
+
+        #self.test_data.append(
+        #                out)
+
+        #out_cpu = out.squeeze(dim=-1).detach().cpu()
+
+        #del out, s, m
+
+        #self.test_data.append(
+        #                out_cpu)
+
+        #print(out_cpu)
+        #poids_octets = out_cpu.numel() * out_cpu.element_size() 
+        #taille_go = poids_octets / (1024 ** 3)
+        #taille_test_data =len(self.test_data)*taille_go 
+
+        #print(f"Taille du out_cpu : {taille_go:.6f} Go")
+        #print(f"Taille du test_data : {taille_test_data:.6f} Go")
+
+        # Afficher la mémoire allouée avant/après une opération
+        #print("--- Memory after test_data ---")
+        #print(torch.cuda.memory_summary(device=None, abbreviated=False))
+
+        #self.test_data.append(
+        #        out.squeeze(dim=-1).detach().cpu() * s + m,
+        #    ) 
+    
+    def on_test_epoch_end_theo(self):
+        self.clear_gpu_mem()
+        #print('TEST DATA SIZE: {}'.format(torch.cat(self.test_data[0]).size()))
+        #print('TEST DATA SIZE PER DIM OUT: {}'.format(torch.cat(self.test_data[0][0]).size()))
+
+        self.test_data = np.array(self.test_data)
+        print(self.test_data.shape)
+
+        #raise Exception('STOP')
+
+        #n_output_dims = np.array(self.test_data[0]).shape[1]
+        n_output_dims = self.test_data.shape[0]
+        
+        # Vérifier cette ligne 
+        for output_dim in range(n_output_dims):
+
+            rec_da = self.test_data[0]
+
+            rec_da = self.trainer.test_dataloaders.dataset.reconstruct_from_items_theo(rec_da)
+
+            print(rec_da)
+            raise Exception('STOP')
+        
+            test_data = rec_da.assign_coords(
+                dict(v0=self.test_quantities)
+            ).to_dataset(dim='v0')
+
+            #taille_go = test_data.nbytes / (1024 ** 3)
+            #print(f"Taille du test_data : {taille_go:.6f} Go")
+    
+            metric_data = test_data.pipe(self.pre_metric_fn)
+            metrics = pd.Series({
+                metric_n: metric_fn(metric_data)
+                for metric_n, metric_fn in self.metrics.items()
+            })
+
+            taille_go = metric_data.nbytes / (1024 ** 3)
+            print(f"Taille du metric_data : {taille_go:.6f} Go")
+    
 
             print(metrics.to_frame(name="Metrics").to_markdown())
             if self.logger:

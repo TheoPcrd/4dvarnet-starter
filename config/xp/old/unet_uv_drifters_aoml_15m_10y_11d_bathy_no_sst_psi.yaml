@@ -23,14 +23,14 @@ multivar:
     output_arch: no_output
     broadcast_time: False
   u10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_dailymean_4th_2010-01-01_2020-01-01.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_2010-01-01_2022-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: u10
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   v10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_dailymean_4th_2010-01-01_2020-01-01.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_2010-01-01_2022-01-01_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: v10
     input_arch: prior_input
@@ -124,10 +124,10 @@ datamodule:
     full_time_domain: ${datamodule.domains}
   domains:
     train:
-      time: {_target_: builtins.slice, _args_: ['2010-01-01', '2018-12-01']}
+      time: {_target_: builtins.slice, _args_: ['2010-01-01', '2017-12-31']}
       #time: {_target_: builtins.slice, _args_: ['2011-01-01', '2011-02-01']}
     val: 
-      time: {_target_: builtins.slice, _args_: ['2020-01-01', '2022-12-31']}
+      time: {_target_: builtins.slice, _args_: ['2018-01-01', '2018-12-31']}
       #time: {_target_: builtins.slice, _args_: ['2011-02-01', '2011-03-01']}
     test: 
       time: {_target_: builtins.slice,  _args_: ['2019-01-01', '2019-12-31']}
@@ -139,7 +139,7 @@ datamodule:
   dl_kw: {batch_size: 1, num_workers: 8}
 
 model:
-  _target_: contrib.multivar.multivar_models_unet.MultivarUNet
+  _target_: contrib.multivar.multivar_models_unet_mae.MultivarUNet_mae
   multivar_selector: ${multivar_selector}
   persist_rw: False
   opt_fn:

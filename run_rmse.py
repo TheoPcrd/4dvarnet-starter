@@ -15,7 +15,7 @@ print(xp_name)
 
 ### Creation du fichier .json
 
-base_output="./"
+base_output="/Odyssey/private/t22picar/multivar_drifter/"
 path_files=f'{base_output}rec/{xp_name}/daily/'
 
 # Chemin vers le fichier JSON
@@ -44,7 +44,7 @@ print(f"\nLe fichier {file_name_update} a été créé.")
 
 # Calcul des metrics 
 
-if "_0m" in xp_name:
+if "_00m" in xp_name:
     depth = 0
 elif "_15m" in xp_name:
     depth = 15
@@ -85,6 +85,33 @@ outputdir = f'{base_output}rec/{xp_name}/metric/Mediterranean/'
 path_dict_region = input_dict+'region_Mediterranean.json'
 #drifter_list = [input_drifter+'Drifters_AOML_region_T1_00m_20190101T000000Z_20200101T000000Z.pyo.gz']
 drifter_list = [input_drifter+f'Drifters_AOML_region_Mediterranean_{depth_formatted}m_20190101T000000Z_20200101T000000Z.pyo.gz']
+
+eulerian.run(drifter_list, path_dict_product, 
+             first_date=first_date, last_date=last_date, 
+             region=path_dict_region, sdepth=1, output_dir=outputdir) 
+
+
+print("Add CAL")
+
+if "_00m" in xp_name:
+    input_drifter = '/Odyssey/private/t22picar/data/drifters/drifter_00m/AOML_GL_00/'
+elif "_15m" in xp_name:
+    input_drifter = '/Odyssey/private/t22picar/data/drifters/AOML/'
+else: 
+    print("No depth ?")
+outputdir = f'{base_output}rec/{xp_name}/metric'
+
+path_dict_product = input_dict+f'{xp_name}.json' 
+
+first_date = datetime.datetime.strptime('20190101T000000Z', const.FMT)
+last_date  = datetime.datetime.strptime('20191231T000000Z', const.FMT) 
+
+outputdir = f'{base_output}rec/{xp_name}/metric/California/'
+
+path_dict_region = input_dict+'region_California.json'
+
+# Warning ! CMEMS instead of AOML ?!
+drifter_list = [input_drifter+f'Drifters_AOML_GL_{depth_formatted}m_20190101T000000Z_20200101T000000Z.pyo.gz']
 
 eulerian.run(drifter_list, path_dict_product, 
              first_date=first_date, last_date=last_date, 

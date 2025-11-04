@@ -119,7 +119,7 @@ class UNet(nn.Module):
         
     def forward(self, x):
         if self.add_input:
-            inp = x[:,:22]
+            inp = x[:,:22].clone()
 
         x1 = self.inc(x)
         x2 = self.down1(x1)

@@ -1,0 +1,13 @@
+{
+    "data_type": "GC_00m_4th_h",
+    "label": "GC_00m_4th_h",
+    "path": "/Odyssey/private/t22picar/data/uv/GC_hourly/hourly_00m/",
+    "pattern": "unet_rec",
+    "match": "unet_rec_(\\d{4})-(\\d{2})-(\\d{2}).nc",
+    "varu": "ugos",
+    "varv": "vgos",
+    "nlon": "lon",
+    "nlat": "lat",
+    "time_coverage_hours": 1,
+    "fmt": "%Y-%m-%dT%H:%M:%S.%fZ"
+}

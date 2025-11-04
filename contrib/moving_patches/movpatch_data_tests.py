@@ -411,11 +411,25 @@ class XrDatasetMovingPatchFastRecGPU(XrDatasetMovingPatch):
         if self.return_coords:
             return sl
         
+        ### Add compute if dask array ###
+        #if isinstance(self.da.isel(**sl), da.Array):
+        #    item = self.da.isel(**sl).compute()  # Charger en mémoire uniquement si c'est un Dask Array
+
+        #print("Compute item")
+        #print("NOT compute item")
         item = self.da.isel(**sl)
+        #print(item.shape)
+
+        #print(item)
+        #print("Compute item done")
 
         item = self.apply_augmentation(item, sl)
 
-        item = item.data.astype(np.float32)
+        #print("item data")
+        #item=item.compute().astype(np.float32)
+        item = item.data.astype(np.float32)   
+        #print("item data done")
+
         if self.postpro_fn is not None:
             item = self.postpro_fn(item)
 

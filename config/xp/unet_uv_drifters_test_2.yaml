@@ -8,13 +8,13 @@ multivar:
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
-  sst:
-    var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2010-01-01-2019-01-01_4th.nc
-    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
-    var_name: thetao
-    input_arch: prior_input
-    output_arch: no_output
-    broadcast_time: False
+  #sst:
+  #  var_path: /Odyssey/private/t22picar/data/sst_L4/SST_L4_OSTIA_2010-01-01-2019-01-01_4th.nc
+  #  #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
+  ##  var_name: thetao
+  #  input_arch: prior_input
+  #  output_arch: no_output
+  #  broadcast_time: False
   #ugos:
   #  var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
   #  #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
@@ -123,34 +123,34 @@ trainer:
       filename: '{val_total_mse:.5f}-{epoch:03d}'
 
 datamodule:
-  _target_: contrib.multivar.multivar_data.MultivarDataModule
+  _target_: contrib.multivar.multivar_data_dask.MultivarDataModule
   multivar_da: 
-    _target_: contrib.data_loading.data.open_multivar_datasets
+    _target_: contrib.data_loading.data_chunks.open_multivar_datasets
     vars_info: ${multivar}
     domain: ${domain.train}
     full_time_domain: ${datamodule.domains}
   domains:
     train:
       #time: {_target_: builtins.slice, _args_: ['2010-01-01', '2017-12-31']}
-      time: {_target_: builtins.slice, _args_: ['2018-12-01', '2018-12-31']}
+      time: {_target_: builtins.slice, _args_: ['2018-10-01', '2018-12-31']}
     val: 
       #time: {_target_: builtins.slice, _args_: ['2018-01-01', '2018-12-31']}
-      time: {_target_: builtins.slice, _args_: ['2019-01-01', '2019-02-01']}
+      time: {_target_: builtins.slice, _args_: ['2018-01-01', '2018-02-01']}
     test: 
       #time: {_target_: builtins.slice,  _args_: ['2019-01-01', '2019-12-31']}
-      time: {_target_: builtins.slice,  _args_: ['2019-02-01', '2019-03-01']}
+      time: {_target_: builtins.slice,  _args_: ['2019-01-01', '2019-01-31']}
   xrds_kw:
-    patch_dims: { time: 11, lat: 680, lon: 1440}
-    strides: { time: 1, lat: 672, lon: 1432}
+    patch_dims: { time: 11, lat: 560, lon: 1440}
+    strides: { time: 1, lat: 552, lon: 1432}
     domain_limits: ${domain.train}
-  dl_kw: {batch_size: 1, num_workers: 8}
+  dl_kw: {batch_size: 1, num_workers: 8} # persistent_workers: False
 
 model:
-  _target_: contrib.multivar.multivar_models_unet.MultivarUNet
+  _target_: contrib.multivar.multivar_models_unet_mae_rec.MultivarUNet_mae
   multivar_selector: ${multivar_selector}
   persist_rw: False
   opt_fn:
-    _target_: contrib.multivar.multivar_models_unet.cosanneal_lr_adam_unet
+    _target_: contrib.multivar.multivar_models_unet_mae_rec.cosanneal_lr_adam_unet
     _partial_: true
     lr: 1e-3
     T_max: ${trainer.max_epochs}
@@ -166,9 +166,9 @@ model:
 
 
   solver:
-    _target_: contrib.multivar.multivar_models_unet.UNet #MultivarGradSolverZero
+    _target_: contrib.multivar.multivar_models_unet_mae_rec.UNet #MultivarGradSolverZero
     n_channels: 
-      _target_: contrib.multivar.multivar_models_unet.get_multivar_only_prior_dims_in
+      _target_: contrib.multivar.multivar_models_unet_mae_rec.get_multivar_only_prior_dims_in
       multivar_dict: ${multivar}
       channels_per_dim: ${datamodule.xrds_kw.patch_dims.time}
     n_classes: 

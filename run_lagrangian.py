@@ -15,7 +15,9 @@ print(xp_name)
 base_output="./"
 # Calcul des metrics 
 
-if "_0m" in xp_name:
+
+
+if "_0m" in xp_name or "_00m" in xp_name:
     depth = 0
     depth_ind=0
     print(f"depth = {depth}")
@@ -34,6 +36,14 @@ input_dict = f'{base_output}metric/dictionary/'
 input_drifter = '/Odyssey/private/t22picar/2024_DC_WOC-ESA/dc_data/drifter/'
 outputdir = f'{base_output}rec/{xp_name}/metric'
 
+### TO CHANGE FOR BOX SIZE ###
+
+#path_drifter_param = input_dict + 'drifters_parameters_bsize=0.125.ini' #'drifters_parameters.ini'
+#dir_output = "metric_bsize=0.125" #
+
+dir_output = "metric"
+path_drifter_param = input_dict + 'drifters_parameters.ini'
+
 path_dict_product = input_dict+f'{xp_name}.json' 
 
 first_date = datetime.datetime.strptime('20190101T000000Z', const.FMT)
@@ -43,11 +53,11 @@ last_date  = datetime.datetime.strptime('20191231T000000Z', const.FMT)
 input_lagrangian_position = '/Odyssey/private/t22picar/2024_DC_WOC-ESA/dc_data/lagrangian_position_pickle/'
 
 region="Agulhas"
-outputdir = f'{base_output}rec/{xp_name}/metric/{region}/'
+outputdir = f'{base_output}rec/{xp_name}/{dir_output}/{region}/'
 path_dict_region = input_dict + f'region_{region}.json'
 region="T1"
 # Formater depth avec deux chiffres significatifs
-path_drifter_param = input_dict + 'drifters_parameters.ini'
+#path_drifter_param = input_dict + 'drifters_parameters.ini'
 path_drifter_position = input_lagrangian_position + f'Fictive_pos_Drifters_AOML_region_{region}_{depth_formatted}m_20190101T000000Z_20200101T000000Z.json' 
 first_date = '20190101T000000Z'
 last_date = '20191231T000000Z'
@@ -68,10 +78,10 @@ _ = sde.run(path_artificial_drifters, drifter_list, output_dir=outputdir_plot, o
 
 
 region="GulfStream"
-outputdir = f'{base_output}rec/{xp_name}/metric/{region}/'
+outputdir = f'{base_output}rec/{xp_name}/{dir_output}/{region}/'
 # Formater depth avec deux chiffres significatifs
 path_dict_region = input_dict + f'region_{region}.json'
-path_drifter_param = input_dict + 'drifters_parameters.ini'
+#path_drifter_param = input_dict + 'drifters_parameters.ini'
 path_drifter_position = input_lagrangian_position + f'Fictive_pos_Drifters_AOML_region_{region}_{depth_formatted}m_20190101T000000Z_20200101T000000Z.json' 
 first_date = '20190101T000000Z'
 last_date = '20191231T000000Z'
@@ -89,11 +99,12 @@ outputdir_plot=outputdir+'/plot/'
 _ = sde.run(path_artificial_drifters, drifter_list, output_dir=outputdir_plot, output_filename=outputfilename,isplot=False)
 
 
+"""
 region="Mediterranean"
-outputdir = f'{base_output}rec/{xp_name}/metric/{region}/'
+outputdir = f'{base_output}rec/{xp_name}/{dir_output}/{region}/'
 # Formater depth avec deux chiffres significatifs
 path_dict_region = input_dict + f'region_{region}.json'
-path_drifter_param = input_dict + 'drifters_parameters.ini'
+#path_drifter_param = input_dict + 'drifters_parameters.ini'
 path_drifter_position = input_lagrangian_position + f'Fictive_pos_Drifters_AOML_region_{region}_{depth_formatted}m_20190101T000000Z_20200101T000000Z.json' 
 first_date = '20190101T000000Z'
 last_date = '20191231T000000Z'
@@ -109,3 +120,4 @@ outputfilename = f'SDE_region_{region}_20190101-20191231'
 outputdir_plot=outputdir+'/plot/'
 #
 _ = sde.run(path_artificial_drifters, drifter_list, output_dir=outputdir_plot, output_filename=outputfilename,isplot=False)
+"""

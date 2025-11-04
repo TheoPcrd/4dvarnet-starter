@@ -11,7 +11,7 @@ source "/Odyssey/private/t22picar/miniforge3/etc/profile.d/conda.sh"
 conda activate 4dvarnet-daniel
 import hydra
 
-xp_name="drifters_cmems_8th_gs_med_SUW_lat"
+xp_name="GC_15m_4th_h"
 
 #conda activate woc_env
 conda activate bench_env
