@@ -23,14 +23,14 @@ multivar:
     output_arch: no_output
     broadcast_time: False
   u10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_2010-01-01_2022-01-01_4th.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_neu/era5_neu_2010-01-01_2021-12-31_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: u10
     input_arch: prior_input
     output_arch: no_output
     broadcast_time: False
   v10:
-    var_path: /Odyssey/private/t22picar/data/era5/era5_2010-01-01_2022-01-01_4th.nc
+    var_path: /Odyssey/private/t22picar/data/era5/era5_neu/era5_neu_2010-01-01_2021-12-31_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
     var_name: v10
     input_arch: prior_input

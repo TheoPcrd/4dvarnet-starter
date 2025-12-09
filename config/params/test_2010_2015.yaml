@@ -1,0 +1,11 @@
+# @package _global_
+
+# sweep_test.yaml
+datamodule:
+  domains:
+    train:
+      time: {_target_: builtins.slice, _args_: ["2010-01-01", "2015-02-01"]}
+    val: 
+      time: {_target_: builtins.slice, _args_: ["2010-01-01", "2015-02-01"]}
+    test:
+      time: {_target_: builtins.slice, _args_: ["2010-01-01", "2015-02-01"]}

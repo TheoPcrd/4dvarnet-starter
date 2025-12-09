@@ -1,7 +1,11 @@
 # @package _global_
 
+year: 2019
+year_start: 2018
+year_end: 2020
+
 xp_name: unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost #ssh_duacs_sst_w_to_u_v_11d_15m_psi #drifters_ssh_duacs_sst_w_to_u_v_11d_15m # name of your experience (will create folders using this name)
-data_name: 2019_glob
+data_name: ${year}_glob
 
 paths:
   ose_data_path: /Odyssey/private/t22picar/multivar_drifter/outputs/saved/${xp_name}
@@ -15,11 +19,14 @@ specs:
   pixels_per_degree: 4
 
   # time on which model will be tested
-  min_time: 2018-12-20
-  max_time: 2020-01-10
+  min_time: ${year_start}-12-20
+  max_time: ${year_end}-01-10
 
-  min_time_std: 2010-01-01
-  max_time_std: 2017-12-31
+  min_time_std: ${year_start}-12-20
+  max_time_std: ${year_end}-01-10
+
+  #min_time_std: 2010-01-01
+  #max_time_std: 2017-12-31
 
   time_day_crop: 0
 

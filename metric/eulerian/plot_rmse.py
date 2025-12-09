@@ -9,11 +9,11 @@ import warnings
 warnings.filterwarnings("ignore") 
 sys.path.append('/Odyssey/private/t22picar/2024_DC_WOC-ESA/')
 from src import utils
-import utils_nb
+import utils_nb as utils_nb
 import pickle 
 
 dir_eulerian = '/Odyssey/private/t22picar/2024_DC_WOC-ESA/dc_product_evaluation/DC_product_evaluation/eulerian_rms/'
-base_outputdir = "../"
+base_outputdir = "../../"
 
 
 def plot_rmse_score_0m(xp_name):

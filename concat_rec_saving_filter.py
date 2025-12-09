@@ -144,3 +144,34 @@ while current_date <= end_date:
     folder_out = dossier_path_daily+f"/unet_rec_{current_date.strftime('%Y-%m-%d')}.nc"
     ds_map_day.to_netcdf(folder_out, 'w', format="NETCDF4", encoding=encoding)
     current_date += timedelta(days=1)  # Passe au jour suivant
+
+### Creation du fichier .json
+
+import json
+
+base_output="/Odyssey/private/t22picar/multivar_drifter/"
+path_files=f'{base_output}rec/{path_file}/daily/'
+
+# Chemin vers le fichier JSON
+file_path = f'{base_output}metric/dictionary/'
+file_name = 'data_type_metric_generic.json'
+
+# Lire le fichier JSON
+with open(file_path+file_name, 'r', encoding='utf-8') as file:
+    data = json.load(file)
+
+# Exemple de modification : ajouter une nouvelle clé-valeur
+data['data_type'] = path_file
+data['label'] = path_file
+data['path'] = path_files
+
+# Afficher les données actuelles
+print("Données actuelles :")
+print(json.dumps(data, indent=4, ensure_ascii=False))
+
+file_name_update = f'{path_file}.json'
+# Écrire les modifications dans le fichier JSON
+with open(file_path+file_name_update, 'w', encoding='utf-8') as file:
+    json.dump(data, file, indent=4, ensure_ascii=False)
+
+print(f"\nLe fichier {file_name_update} a été créé.")

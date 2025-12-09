@@ -72,3 +72,15 @@ logging.disable(logging.CRITICAL)
 _ = drifters.run_all_load_once(path_drifter_param, path_dict_product, path_drifter_position,
                  days_of_advection=advection_days, output_dir=outputdir, region=path_dict_region, 
                  first_date=first_date, last_date=last_date, sdepth=depth_ind)
+
+input_drifter = "/Odyssey/private/t22picar/data/drifters/AOML/"
+
+drifter_list = [input_drifter + f'Drifters_AOML_GL_{depth_formatted}m_20190101T000000Z_20200101T000000Z.pyo.gz']
+#region="Agulhas"
+#drifter_list = path_drifter_position
+path_artificial_drifters = os.path.join(outputdir,f'{xp_name}_region_{region}_dep{depth_ind}.pyo.gz')
+print(path_artificial_drifters)
+outputfilename = f'SDE_region_{region}_20190101-20191231'
+outputdir_plot=outputdir+'/plot/'
+
+_ = sde.run(path_artificial_drifters, drifter_list, output_dir=outputdir_plot, output_filename=outputfilename,isplot=False)

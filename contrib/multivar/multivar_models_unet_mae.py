@@ -11,7 +11,7 @@ import pickle
 
 #import sys
 #sys.path.append("/Odyssey/private/t22picar/4Dvarnet_uv/4dvarnet-starter/contrib/multivar/")
-from contrib.multivar.parts import StandardBlock, ResBlock, Down, Up, OutConv
+from contrib.multivar.parts_drop import StandardBlock, ResBlock, Down, Up, OutConv
 
 import kornia.filters as kfilts
 
@@ -46,12 +46,6 @@ class MultivarUNet_mae(Multivar4dVarNet):
         total_mse = None
 
         for i, var in enumerate(output_var_names):
-            #TP : add mask nan
-            #mask = ~torch.isnan(self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i])
-            
-            # A changer
-            #mask = (self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i] != self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i][0][0][0]).float() # 1 si != de 0 
-            #print(torch.sum(mask))
 
             loss_i = self.weighted_mae((out[:,i] - self.multivar_selector.multivar_full_output(batch).view_as(out)[:,i]), self.rec_weight[:out.size(2)])
             
@@ -63,25 +57,12 @@ class MultivarUNet_mae(Multivar4dVarNet):
             loss = loss_i if loss is None else loss + loss_i
             total_mse = mse_i if total_mse is None else total_mse + mse_i
 
-        #print("STEP")
-        #print(f"{phase}_total_mse")
-
         with torch.no_grad():
             self.log(f"{phase}_total_mse", total_mse, prog_bar=True, on_step=False, on_epoch=True)
               
         return loss, out
 
     def step(self, batch, phase=""):
-
-        #if self.premiere_train:
-        #    print("C'est le premier validation step !")
-        #    self.save_norm_stat()
-        #    self.premiere_train=False
-
-        
-        # SKIP BATCH TO IMPLEMENT #
-        #if self.skip_batch(batch):
-        #   return None, None
 
         #training_loss, out = self.multivar_step(batch, phase)
         training_loss, out = self.multivar_step_mask(batch, phase)
@@ -95,6 +76,49 @@ class MultivarUNet_mae(Multivar4dVarNet):
 
 
 class UNet(nn.Module):
+    def __init__(self, n_channels, n_classes, bilinear=True, block=ResBlock, add_input=False, dropout_prob=0):
+        super(UNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.add_input = add_input
+        self.bilinear = bilinear
+        self.dropout_prob = dropout_prob
+        factor = 2 if bilinear else 1
+        sfs = 1/torch.arange(1, 10).sqrt()
+
+        self.inc = StandardBlock(n_channels, 64, dropout_prob=self.dropout_prob)
+        self.down1 = Down(64, 128, block, sf=sfs[1], dropout_prob=self.dropout_prob)
+        self.down2 = Down(128, 256, block, sf=sfs[2], dropout_prob=self.dropout_prob)
+        self.down3 = Down(256, 512, block, sf=sfs[3], dropout_prob=self.dropout_prob)
+        self.down4 = Down(512, 1024 // factor, block, sf=sfs[4], dropout_prob=self.dropout_prob)
+
+        self.up1 = Up(1024, 512 // factor, block, bilinear, sf=sfs[5], dropout_prob=self.dropout_prob)
+        self.up2 = Up(512, 256 // factor, block, bilinear, sf=sfs[6], dropout_prob=self.dropout_prob)
+        self.up3 = Up(256, 128 // factor, block, bilinear, sf=sfs[7], dropout_prob=self.dropout_prob)
+        self.up4 = Up(128, 64, block, bilinear, sf=sfs[8], dropout_prob=self.dropout_prob)
+        self.outc = OutConv(64, n_classes)
+
+    def forward(self, x):
+        if self.add_input:
+            inp = x[:,-1].unsqueeze(1)
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        x = self.up1(x5, x4)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
+
+        out = self.outc(x)
+        if self.add_input:
+            out += inp
+        return out
+    
+
+class UNet_old(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=True, block=ResBlock,
                  add_input=False):
         super(UNet, self).__init__()
@@ -145,6 +169,7 @@ class UNet(nn.Module):
             out += inp
 
         return out
+
 
 def cosanneal_lr_adam_unet(lit_mod, lr, T_max=100, weight_decay=0.):
     opt = torch.optim.Adam(
