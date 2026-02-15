@@ -21,6 +21,7 @@ print(xp_name)
 base_output="./"
 
 list_region = ["Agulhas","GulfStream","Mediterranean","California","NA"]
+list_region = ["Hawai","Canary"]
 
 if "_0m" in xp_name or "_00m" in xp_name:
     depth = 0

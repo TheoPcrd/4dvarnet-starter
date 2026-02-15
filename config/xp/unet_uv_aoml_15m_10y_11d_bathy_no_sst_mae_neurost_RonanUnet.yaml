@@ -137,6 +137,11 @@ datamodule:
     strides: { time: 1, lat: 552, lon: 1432}
     domain_limits: ${domain.train}
   dl_kw: {batch_size: 1, num_workers: 8}
+  norm_stats: [[4.30138946e-01,  2.02724468e-02,  1.01279770e-03,  1.18275523e-01,
+        1.12506501e-01,  2.62093283e-02,  8.73786863e-03, -7.36356247e-03,
+        3.97375439e+03],[2.07894295e-01, 9.75202173e-02, 8.88478979e-02, 1.68560958e+00,
+       1.40871561e+00, 3.19744706e-01, 2.63232410e-01, 7.63729477e+00,
+       5.87686096e+02]]
 
 model:
   _target_: contrib.multivar.multivar_models_unet_mae.MultivarUNet_mae

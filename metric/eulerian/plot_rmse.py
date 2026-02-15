@@ -196,16 +196,16 @@ class DictTable_color():
                     if "Correlation" in key  or "Variance" in key:
                         style = self._value_to_color_r(value, min_val, max_val)
                         if max_indices[key] == i:
-                            html.append("<td style='border: 1px solid #000000; padding: 8px; {1}'><b>{0}</b></td>".format("{:.3f}".format(value), style))
+                            html.append("<td style='border: 1px solid #000000; padding: 8px; {1}'><b>{0}</b></td>".format("{:.2f}".format(value), style))
                         else:
-                            html.append("<td style='border: 1px solid #000000; padding: 8px; {1}'>{0}</td>".format("{:.3f}".format(value), style))
+                            html.append("<td style='border: 1px solid #000000; padding: 8px; {1}'>{0}</td>".format("{:.2f}".format(value), style))
                     else:
                         style = self._value_to_color_r(value, min_val, max_val)
                         # Check if this is the smallest value in the column
                         if min_indices[key] == i:
-                            html.append("<td style='border: 1px solid #000000; padding: 8px; {1}'><b>{0}</b></td>".format("{:.3f}".format(value), style))
+                            html.append("<td style='border: 1px solid #000000; padding: 8px; {1}'><b>{0}</b></td>".format("{:.2f}".format(value), style))
                         else:
-                            html.append("<td style='border: 1px solid #000000; padding: 8px; {1}'>{0}</td>".format("{:.3f}".format(value), style))
+                            html.append("<td style='border: 1px solid #000000; padding: 8px; {1}'>{0}</td>".format("{:.2f}".format(value), style))
             html.append("</tr>")
 
         html.append("</table>")

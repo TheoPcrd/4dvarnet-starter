@@ -15,7 +15,7 @@ print(xp_name)
 
 ### Creation du fichier .json
 
-base_output="./"
+base_output="/Odyssey/private/t22picar/multivar_drifter/"
 path_files=f'{base_output}rec/{xp_name}/daily/'
 
 # Chemin vers le fichier JSON

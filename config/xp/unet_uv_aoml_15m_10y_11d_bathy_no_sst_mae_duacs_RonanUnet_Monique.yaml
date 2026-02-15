@@ -130,17 +130,13 @@ datamodule:
       time: {_target_: builtins.slice, _args_: ['2018-01-01', '2018-12-31']}
       #time: {_target_: builtins.slice, _args_: ['2011-02-01', '2011-03-01']}
     test: 
-      time: {_target_: builtins.slice,  _args_: ['2018-12-20', '2020-01-10']}
+      time: {_target_: builtins.slice,  _args_: ['2010-01-01', '2020-01-10']}
       #time: {_target_: builtins.slice,  _args_: ['2011-03-01', '2011-03-01']}
   xrds_kw:
     patch_dims: { time: 11, lat: 560, lon: 1440}
     strides: { time: 1, lat: 552, lon: 1432}
     domain_limits: ${domain.train}
   dl_kw: {batch_size: 1, num_workers: 8}
-  norm_stats: [[ 3.54403108e-01,  1.43661266e-02,  8.41956644e-04,  1.18275523e-01,
-        1.12506501e-01,  2.62093283e-02, -7.36356247e-03,
-       -4.16658781e-02,  3.97375439e+03],[2.00837910e-01, 9.71699879e-02, 7.99173340e-02, 1.68560958e+00,
-       1.40871561e+00, 3.19744706e-01, 2.63232410e-01, 7.63729477e+00, 5.87686096e+02]] # Add for 2010-2019
 
 model:
   _target_: contrib.multivar.multivar_models_unet_mae.MultivarUNet_mae
@@ -192,8 +188,8 @@ entrypoints:
     trainer: ${trainer}
     lit_mod: ${model}
     dm: ${datamodule}
-    #ckpt: /Odyssey/private/t22picar/multivar_drifter/outputs/saved/unet_uv_drifters_aoml_15m_10y_11d_bathy_no_sst_mae_neurost/unet_uv_drifters_aoml_15m_10y_11d_bathy_no_sst_mae_neurost/checkpoints/val_total_mse=0.42672-epoch=094.ckpt
-    #only_rec: True
+    ckpt: /Odyssey/private/t22picar/multivar_drifter/outputs/saved/unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_duacs_RonanUnet/unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_duacs_RonanUnet/checkpoints/val_total_mse=0.10311-epoch=092.ckpt
+    only_rec: True
 
 defaults:
   - _self_

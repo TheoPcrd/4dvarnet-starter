@@ -52,13 +52,6 @@ multivar:
     output_arch: full_output
     broadcast_time: False
     #fill_nan: 0
-  latitude_var:
-    var_path: /Odyssey/private/t22picar/data/ssh_L4/SSH_L4_CMEMS_2010-01-01-2024-01-01_4th.nc
-    #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
-    var_name: lat
-    input_arch: prior_input
-    output_arch: no_output
-    broadcast_time: True
   bathy:
     var_path: /Odyssey/private/t22picar/data/bathy/bathymetry_4th.nc
     #mask_path: /Odyssey/public/glorys/obs_masks/global_obs_6sats_masks_2022.pickle
@@ -137,10 +130,6 @@ datamodule:
     strides: { time: 1, lat: 552, lon: 1432}
     domain_limits: ${domain.train}
   dl_kw: {batch_size: 1, num_workers: 8}
-  norm_stats: [[ 3.54403108e-01,  1.43661266e-02,  8.41956644e-04,  1.18275523e-01,
-        1.12506501e-01,  2.62093283e-02, -7.36356247e-03,
-       -4.16658781e-02,  3.97375439e+03],[2.00837910e-01, 9.71699879e-02, 7.99173340e-02, 1.68560958e+00,
-       1.40871561e+00, 3.19744706e-01, 2.63232410e-01, 7.63729477e+00, 5.87686096e+02]] # Add for 2010-2019
 
 model:
   _target_: contrib.multivar.multivar_models_unet_mae.MultivarUNet_mae

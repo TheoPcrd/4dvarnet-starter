@@ -1,0 +1,13 @@
+{
+    "data_type": "unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_duacs_RonanUnet_month",
+    "label": "unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_duacs_RonanUnet_month",
+    "path": "/Odyssey/private/t22picar/multivar_drifter/rec/unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_duacs_RonanUnet_month/daily/",
+    "pattern": "unet_rec",
+    "match": "unet_rec_(\\d{4})-(\\d{2})-(\\d{2}).nc",
+    "varu": "ugos",
+    "varv": "vgos",
+    "nlon": "lon",
+    "nlat": "lat",
+    "time_coverage_hours": 24,
+    "fmt": "%Y-%m-%dT%H:%M:%S.%fZ"
+}

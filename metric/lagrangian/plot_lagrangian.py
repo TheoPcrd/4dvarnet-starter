@@ -29,11 +29,30 @@ logger = logging.getLogger(__name__)
 import matplotlib.pyplot
 import cartopy.crs as ccrs
 import xarray
-
+import cartopy.feature as cfeature
 #lon_max=-43
 #lon_min=-80
 #lat_max=46.5 
 #lat_min=25
+pyplot.rcParams["axes.edgecolor"] = "black"
+pyplot.rcParams["axes.linewidth"] = 1.5
+
+dico_label = {
+    "duacs_15m_8th": "DUACS",
+    "globcurrent_15m_4th": "GlobCurrent",
+    "unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_duacs_RonanUnet": "NOSC$_{duacs}$",
+    "unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost_RonanUnet": "NOSC$_{neurost}$",
+    "neurost_sst_ssh_15m_10th": "NeurOST",
+    # Ajoutez d'autres correspondances ici
+}
+
+dico_color = {
+    "globcurrent_15m_4th": "b",
+    "unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_duacs_RonanUnet": "g",
+    "unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost_RonanUnet": "teal",
+    "neurost_sst_ssh_15m_10th": "violet",
+    # Ajoutez d'autres correspondances ici
+}
 
 def dist(lon1: numpy.ndarray, lat1: numpy.ndarray, lon2: numpy.ndarray,
          lat2: numpy.ndarray) -> numpy.ndarray:
@@ -231,12 +250,12 @@ def get_sst_MW(date_target):
 
 def plot_lagrangian_traj(date_target,fictive_traj,fictive_traj_neurost,dic_drif,box):
     lon_min, lon_max, lat_min, lat_max = box
-    alpha=0.2
+    alpha=0.4
     map_back = get_sst_L4_8th(date_target,box)
     list_advection, dic_all = get_list_advection(date_target,fictive_traj)
     list_advection_neurost, dic_all_neurost = get_list_advection(date_target,fictive_traj_neurost)
 
-    figure = pyplot.figure(figsize=(12, 12))
+    figure = pyplot.figure(figsize=(8, 8))
     proj=ccrs.PlateCarree()
 
     for advection,advection_neurost in zip(list_advection,list_advection_neurost):
@@ -257,22 +276,43 @@ def plot_lagrangian_traj(date_target,fictive_traj,fictive_traj_neurost,dic_drif,
         extent = (numpy.nanmin(lon_f)-1, numpy.nanmax(lon_f)+1,
                     numpy.nanmin(lat_f)-1, numpy.nanmax(lat_f)+1)
         
-        ax0.gridlines(crs=proj, draw_labels=True, color='gray', linestyle='--',
-                        alpha=0.5)
+        gl = ax0.gridlines(crs=proj, draw_labels=True, color='gray', linestyle='--',
+                        alpha=0.3, xlocs=range(-180, 181, 4), ylocs=range(-90, 91, 4))
+            # adjust labels to taste
+        gl.top_labels = False
+        gl.right_labels = False
+        gl.bottom_labels = True
+        gl.left_labels = True
+
+        ax0.add_feature(
+        cfeature.LAND,
+        facecolor='lightgray',  # Couleur de remplissage
+        edgecolor='black',      # Couleur des bordures (optionnel)
+        zorder=2                # Ordre de dessin (0 = en arrière-plan)
+        )
+
+        ax0.coastlines(resolution='10m', lw=0.5)
+        
         for pa in range(0, numpy.shape(lon_f)[1], 1):
-            ax0.plot(lon_f[:, pa], lat_f[:, pa], 'b', transform=proj,alpha=alpha,zorder=5)
+            ax0.plot(lon_f[:, pa], lat_f[:, pa], dico_color.get(dic_attr["data_type"],'g'), transform=proj,alpha=alpha,zorder=5)
+            ax0.plot(lon_f_n[:, pa], lat_f_n[:, pa], dico_color.get(dic_attr_n["data_type"],'g'), transform=proj,alpha=alpha,zorder=5)
+        
+        """"
+        for pa in range(0, numpy.shape(lon_f)[1], 1):
+            ax0.plot(lon_f[:, pa], lat_f[:, pa], dico_color.get(dic_attr["data_type"],'g'), transform=proj,alpha=alpha,zorder=5)
 
         for pa in range(0, numpy.shape(lon_f_n)[1], 1):
-            ax0.plot(lon_f_n[:, pa], lat_f_n[:, pa], 'g', transform=proj,alpha=alpha,zorder=5)
+            ax0.plot(lon_f_n[:, pa], lat_f_n[:, pa], dico_color.get(dic_attr_n["data_type"],'g'), transform=proj,alpha=alpha,zorder=5)
+        """
 
         ax0.plot(lon_d, lat_d, '-k', transform=proj,alpha=1,zorder=10)
-        ax0.scatter(lon_d[0],lat_d[0], transform=proj,alpha=1,c='k',s=20,marker='o',zorder=10)
-        ax0.scatter(lon_d[-1],lat_d[-1], transform=proj,alpha=1,c='k',s=20,marker='^',zorder=10)
+        ax0.scatter(lon_d[0],lat_d[0], transform=proj,alpha=1,c='k',s=40,marker='o',zorder=10)
+        ax0.scatter(lon_d[-1],lat_d[-1], transform=proj,alpha=1,c='k',s=40,marker='^',zorder=10)
     
     sst_cm = ax0.pcolormesh(map_back.lon,map_back.lat,map_back,cmap=matplotlib.pyplot.cm.RdBu_r)
 
-    ax0.plot(lon_f[:, 0], lat_f[:, 0], 'b', transform=proj,alpha=1,label=dic_attr["data_type"])
-    ax0.plot(lon_f_n[:, 0], lat_f_n[:, 0], 'g', transform=proj,alpha=1,label=dic_attr_n["data_type"])
+    ax0.plot(lon_f[0, 0], lat_f[0, 0], dico_color.get(dic_attr["data_type"],'b'), transform=proj,alpha=1,label=dico_label.get(dic_attr["data_type"], dic_attr["data_type"]))
+    ax0.plot(lon_f_n[0, 0], lat_f_n[0, 0], dico_color.get(dic_attr_n["data_type"],'g'), transform=proj,alpha=1,label=dico_label.get(dic_attr_n["data_type"], dic_attr_n["data_type"]))
     ax0.plot(lon_d, lat_d, '-k', transform=proj,alpha=1,label="Drifter")
 
     ax0.set_ylim(lat_min,lat_max)
@@ -281,8 +321,19 @@ def plot_lagrangian_traj(date_target,fictive_traj,fictive_traj_neurost,dic_drif,
     ax0.legend()
     ax0.set_title(f"First date advection : {date_target}")
 
-    cbar = matplotlib.pyplot.colorbar(sst_cm, ax=ax0, orientation='vertical', pad=0.08,shrink=0.35)
-    cbar.set_label("SST day+5 (K)")
+    #get size and extent of axes:
+    axpos = ax0.get_position()
+    pos_x = axpos.x0+axpos.width + 0.01# + 0.25*axpos.width
+    pos_y = axpos.y0
+    cax_width = 0.02
+    cax_height = axpos.height
+
+    pos_cax = figure.add_axes([pos_x,pos_y,cax_width,cax_height])
+    cbar=matplotlib.pyplot.colorbar(sst_cm, cax=pos_cax, orientation='vertical')
+    cbar.set_label("SST at released day + 5d (K)")
+        
+    #cbar = matplotlib.pyplot.colorbar(sst_cm, ax=ax0, orientation='vertical', pad=0.08,shrink=0.35)
+
 
 def get_sde(ifile: str, dic_all: dict, dic_drif, isplot: Optional[bool] = True,
                     projection: Optional[str] = None) -> dict:

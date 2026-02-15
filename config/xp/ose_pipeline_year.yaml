@@ -4,7 +4,7 @@ year: 2019
 year_start: 2018
 year_end: 2020
 
-xp_name: unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost #ssh_duacs_sst_w_to_u_v_11d_15m_psi #drifters_ssh_duacs_sst_w_to_u_v_11d_15m # name of your experience (will create folders using this name)
+xp_name: unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost_RonanUnet #ssh_duacs_sst_w_to_u_v_11d_15m_psi #drifters_ssh_duacs_sst_w_to_u_v_11d_15m # name of your experience (will create folders using this name)
 data_name: ${year}_glob
 
 paths:
@@ -13,7 +13,7 @@ paths:
   metrics_path: /Odyssey/private/t22picar/multivar_drifter/metrics/
 
   model_config_path: /Odyssey/private/t22picar/multivar_drifter/config/xp/${xp_name}.yaml
-  model_ckpt_path: /Odyssey/private/t22picar/multivar_drifter/outputs/saved/unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost/unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost/checkpoints/val_total_mse=0.10336-epoch=076.ckpt
+  model_ckpt_path: /Odyssey/private/t22picar/multivar_drifter/outputs/saved/unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost_RonanUnet/unet_uv_aoml_15m_10y_11d_bathy_no_sst_mae_neurost_RonanUnet/checkpoints/val_total_mse=0.10067-epoch=103.ckpt
 
 specs:
   pixels_per_degree: 4

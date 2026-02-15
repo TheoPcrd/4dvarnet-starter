@@ -11,9 +11,11 @@ sys.path.append('/Odyssey/private/t22picar/2024_DC_WOC-ESA/')
 import json
 
 xp_name = sys.argv[1]
+
 print(xp_name)
 
-list_region = ["Agulhas","GulfStream","Mediterranean","California","NA"]
+#list_region = ["Agulhas","GulfStream","Mediterranean","California","NA"]
+list_region = ["Hawai","Canary"]
 
 #list_region = ["California"]
 
